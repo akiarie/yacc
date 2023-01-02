@@ -1,5 +1,5 @@
-#ifndef BNF_LEX
-#define BNF_LEX
+#ifndef YACC_LEX
+#define YACC_LEX
 
 enum tktype {
 	TK_EOF		= 0,		/* "...the endmarker must have token

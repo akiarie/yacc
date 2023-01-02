@@ -1,5 +1,5 @@
-#ifndef BNF_GEN
-#define BNF_GEN
+#ifndef YACC_GEN
+#define YACC_GEN
 
 void
 gen(FILE *, Grammar *);

@@ -1,5 +1,5 @@
-#ifndef BNF_UTIL
-#define BNF_UTIL
+#ifndef YACC_UTIL
+#define YACC_UTIL
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>

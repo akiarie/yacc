@@ -1,5 +1,5 @@
-#ifndef BNF_TABLE
-#define BNF_TABLE
+#ifndef YACC_TABLE
+#define YACC_TABLE
 
 struct table;
 
