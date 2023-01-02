@@ -1,13 +1,9 @@
 CC = cc -g
 
-HEADERS = util.h table.h grammar.h parser.h
-OBJECTS = util.o table.o grammar.o parser.o
+HEADERS = util.h table.h grammar.h parser.h gen.h
+OBJECTS = util.o table.o grammar.o parser.o gen.o
 
 GRAMMAR_INC = grammar_parse.c grammar_util.c grammar_lr.c
-
-grammar.o: grammar.h grammar.c $(GRAMMAR_INC)
-	@printf '\CC\t$@\n'
-	@$(CC) -c grammar.c
 
 util.o: util.h util.c
 	@printf '\CC\t$@\n'
@@ -17,15 +13,27 @@ table.o: table.h table.c
 	@printf '\CC\t$@\n'
 	@$(CC) -c table.c
 
+grammar.o: grammar.h grammar.c $(GRAMMAR_INC)
+	@printf '\CC\t$@\n'
+	@$(CC) -c grammar.c
+
+parser.o: parser.h parser.c
+	@printf '\CC\t$@\n'
+	@$(CC) -c parser.c
+
+gen.o: gen.h gen.c
+	@printf '\CC\t$@\n'
+	@$(CC) -c gen.c
+
 grammar_test: grammar_test.c $(HEADERS) $(OBJECTS)
 	@printf '\CC\t$@\n'
 	@$(CC) -o $@ grammar_test.c $(OBJECTS)
 
-parser_test: parser_test.c $(HEADERS) $(OBJECTS)
+gen_test: gen_test.c $(HEADERS) $(OBJECTS)
 	@printf '\CC\t$@\n'
-	@$(CC) -o $@ parser_test.c $(OBJECTS)
+	@$(CC) -o $@ gen_test.c $(OBJECTS)
 
-check: grammar_test parser_test
+check: grammar_test gen_test
 	@./run-tests.sh
 
 clean-tests:

@@ -13,18 +13,19 @@ typedef struct grammar Grammar;
 typedef struct symbolset {
 	size_t n;
 	char **sym;
+	char *action;
 } Prod;
 
 Prod *
-prod_create();
+prod_create(char *action);
 
 void
 prod_destroy(Prod *p);
 
 Prod *
-prod_inline_act(char *, ...);
+prod_inline_act(char *action, ...);
 
-#define prod_inline(...) prod_inline_act(__VA_ARGS__, NULL)
+#define prod_inline(action, ...) prod_inline_act(action, __VA_ARGS__, NULL)
 
 char *
 prod_bare_str(const Prod *);

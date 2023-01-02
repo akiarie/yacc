@@ -10,6 +10,22 @@ repeat(char c, size_t reps);
 char *
 dynamic_str(const char *);
 
+
+struct stack {
+};
+
+struct stack
+stack_create();
+
+void
+stack_popn(struct stack, int);
+
+int
+stack_top(struct stack);
+
+void
+stack_push(struct stack, int);
+
 struct map {
 	struct entry {
 		char *key;

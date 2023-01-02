@@ -30,7 +30,7 @@ grammar_augment(const Grammar *G)
 {
 	Grammar *GG = grammar_create(grammar_prime(G, G->S));
 	Symbol *SS = symbol_create();
-	symbol_addprod(SS, prod_inline(G->S));
+	symbol_addprod(SS, prod_inline(NULL, G->S));
 	map_set(GG->map, GG->S, SS);
 	for (int i = 0; i < G->map->n; i++) {
 		struct entry *e = G->map->entries[i];

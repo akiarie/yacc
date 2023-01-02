@@ -1,9 +1,23 @@
 #ifndef YACC_PARSER
 #define YACC_PARSER
 
+enum actiontype {
+	ACTION_ACCEPT	= 1 << 0,
+	ACTION_SHIFT	= 1 << 1,
+	ACTION_REDUCE	= 1 << 2,
+};
+
+typedef struct {
+	enum actiontype type;
+	union actunion {
+		int prod; /* reduce */
+		int state; /* shift */
+	} u;
+} Action;
+
 typedef struct {
 	Itemset *state;
-	struct map **_goto;
+	struct map **action;
 	size_t nstate;
 	char *S; /* start symbol, used for acceptance */
 	struct lrprodset {

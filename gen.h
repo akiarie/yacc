@@ -2,6 +2,6 @@
 #define YACC_GEN
 
 void
-gen(FILE *, Grammar *);
+gen(FILE *, Parser);
 
 #endif

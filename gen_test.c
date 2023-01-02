@@ -1,29 +1,39 @@
 #include <stdio.h>
 
 #include "grammar.h"
+#include "parser.h"
 #include "gen.h"
 #include "util.h"
 
-int
-main()
+int main()
 {
 	Grammar *G = grammar_create("line");
 	map_set(G->map, "line", symbol_inline(
-		prod_inline("expr", "\n")
+		prod_inline("printf(\"%%d\\n\", $1);", "expr", "\n")
 	));
 	map_set(G->map, "expr", symbol_inline(
-		prod_inline("expr", "+", "term"),
-		prod_inline("term")
+		prod_inline("$$ = $1 + $3;", "expr", "+", "term"),
+		prod_inline(NULL, "term")
 	));
 	map_set(G->map, "term", symbol_inline(
-		prod_inline("term", "*", "factor"),
-		prod_inline("factor")
+		prod_inline("$$ = $1 * $3;", "term", "*", "factor"),
+		prod_inline(NULL, "factor")
 	));
 	map_set(G->map, "factor", symbol_inline(
-		prod_inline("(", "expr", ")"),
-		prod_inline("DIGIT")
+		prod_inline("$$ = $2;", "(", "expr", ")"),
+		prod_inline(NULL, "id")
 	));
-	gprintf("%j\n", G);
-	gen(stdout, G);
+	Grammar *GG = grammar_augment(G);
+	Parser P = parser_create(GG);
+	Symbolset *order = symbolset_create(
+		"id", "+", "*", "(", ")", "$", "line", "expr", "term", "factor"
+	);
+	char *output = parser_str_ordered(P, order);
+	prod_destroy(order);
+	printf("%s\n", output);
+	free(output);
+	gen(stdout, P);
+	parser_destroy(P);
 	grammar_destroy(G);
+	grammar_destroy(GG);
 }
