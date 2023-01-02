@@ -10,8 +10,8 @@ enum actiontype {
 typedef struct {
 	enum actiontype type;
 	union actunion {
-		int prod; /* reduce */
-		int state; /* shift */
+		int prod;	/* reduce */
+		int state;	/* shift */
 	} u;
 } Action;
 
@@ -19,7 +19,7 @@ typedef struct {
 	Itemset *state;
 	struct map **action;
 	size_t nstate;
-	char *S; /* start symbol, used for acceptance */
+	char *S;	/* start symbol, used for acceptance */
 	struct lrprodset {
 		char **sym;
 		Prod **prod;
