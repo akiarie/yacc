@@ -2,6 +2,7 @@
 *.swp
 *.yy.c
 *.tab.c
+*.tab.h
 *.o
 lex
 *_test
