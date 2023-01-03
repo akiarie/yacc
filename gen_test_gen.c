@@ -1,3 +1,7 @@
+#include <ctype.h>
+
+int yylval;
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -53,6 +57,8 @@ yystate0(struct yysymbol),
 	yystate12(struct yysymbol),
 	yystate13(struct yysymbol);
 
+#define DIGIT 262
+
 struct yyparseresult
 yystate0(struct yysymbol s)
 {
@@ -63,7 +69,7 @@ yystate0(struct yysymbol s)
 		case 260: /* ( */
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* id */
+		case 262: /* DIGIT */
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
@@ -243,7 +249,7 @@ yystate5(struct yysymbol s)
 		case 260: /* ( */
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* id */
+		case 262: /* DIGIT */
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
@@ -281,19 +287,19 @@ yystate6(struct yysymbol s)
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
-			/* reduce factor -> id */
+			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		case 258: /* + */
-			/* reduce factor -> id */
+			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		case 261: /* ) */
-			/* reduce factor -> id */
+			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		case 259: /* * */
-			/* reduce factor -> id */
+			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		default:
@@ -352,7 +358,7 @@ yystate8(struct yysymbol s)
 		case 260: /* ( */
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* id */
+		case 262: /* DIGIT */
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
@@ -390,7 +396,7 @@ yystate9(struct yysymbol s)
 		case 260: /* ( */
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* id */
+		case 262: /* DIGIT */
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
@@ -574,4 +580,22 @@ yyparse()
 		return 1;
 	}
 	return 0;
+}
+
+
+int
+yylex()
+{
+	int c = getchar();
+	if (isdigit(c)) {
+		yylval = c - '0';
+		return DIGIT;
+	}
+	return c;
+}
+
+int 
+main()
+{
+	return yyparse();
 }

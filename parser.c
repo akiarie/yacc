@@ -164,7 +164,7 @@ canonicalterms(Grammar *G, struct map *defined)
 }
 
 Parser
-parser_create_term(Grammar *G, struct map *terminals)
+parser_create_term(Grammar *G, char *precode, char *postcode, struct map *terminals)
 {
 	Symbol *S = map_get(G->map, G->S); assert(S != NULL && S->n > 0);
 	Itemset start = itemset_create();
@@ -173,6 +173,7 @@ parser_create_term(Grammar *G, struct map *terminals)
 		.S = G->S, .prods = grammar_prods(G),
 		.nstate = 0, .state = NULL, .action = NULL,
 		.yyterms = canonicalterms(G, terminals),
+		.precode = precode, .postcode = postcode,
 	};
 	parser_includestate(&P, itemset_closure(start, G));
 	for (int i = 0; i < P.nstate; i++) {
@@ -182,10 +183,10 @@ parser_create_term(Grammar *G, struct map *terminals)
 }
 
 Parser
-parser_create(Grammar *G)
+parser_create(Grammar *G, char *precode, char *postcode)
 {
 	struct map *empty = map_create();
-	Parser P = parser_create_term(G, canonicalterms(G, empty));
+	Parser P = parser_create_term(G, precode, postcode, canonicalterms(G, empty));
 	map_destroy(empty);
 	return P;
 }

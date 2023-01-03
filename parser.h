@@ -37,13 +37,14 @@ typedef struct {
 		size_t n;
 	} prods;
 	struct map *yyterms; /* map Grammar terminals to yylex int values */
+	char *precode, *postcode;
 } Parser;
 
 Parser
-parser_create(Grammar *);
+parser_create(Grammar *, char *precode, char *postcode);
 
 Parser
-parser_create_term(Grammar *, struct map *yyterms);
+parser_create_term(Grammar *, char *, char *, struct map *yyterms);
 
 void
 parser_destroy(Parser);

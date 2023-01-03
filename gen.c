@@ -244,7 +244,9 @@ genstates(FILE *out, Parser P)
 void
 gen(FILE *out, Parser P)
 {
+	fputs(P.precode, out);
 	fputs(
+"\n"
 "#include <stdio.h>\n"
 "#include <stdlib.h>\n"
 "#include <stdbool.h>\n"
@@ -267,4 +269,7 @@ gen(FILE *out, Parser P)
 "	}\n"
 "	return 0;\n"
 "}\n");
+	fputs(
+"\n", out);
+	fputs(P.postcode, out);
 }
