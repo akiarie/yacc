@@ -206,13 +206,22 @@ parser_destroy(Parser P)
 	free(P.prods.prod);
 }
 
+static char *
+safesym(char *sym)
+{
+	if (strcmp(sym, "\n") == 0) {
+		return "\\n";
+	}
+	return sym;
+}
+
 static Row *
 parser_title(Parser P, Symbolset *symbols)
 {
 	Row *title = row_create(repeat('s', symbols->n + 1));
 	row_appendstring(title, "STATE");
 	for (int i = 0; i < symbols->n; i++) {
-		row_appendstring(title, symbols->sym[i]);
+		row_appendstring(title, safesym(symbols->sym[i]));
 	}
 	return title;
 }
@@ -223,15 +232,6 @@ inttostr(int i)
 	struct strbuilder *b = strbuilder_create();
 	strbuilder_printf(b, "%d", i);
 	return strbuilder_build(b);
-}
-
-static char *
-safesym(char *sym)
-{
-	if (strcmp(sym, "\n") == 0) {
-		return "\\n";
-	}
-	return sym;
 }
 
 static Row *

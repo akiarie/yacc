@@ -38,22 +38,48 @@ prepareact(char *action)
 	return strbuilder_build(b);
 }
 
+static char *
+prod_safestr(Prod *p)
+{
+	struct strbuilder *b = strbuilder_create();
+	for (int i = 0; i < p->n; i++) {
+		strbuilder_printf(b, "%s%s", safesym(p->sym[i]),
+			(i + 1 < p->n) ? " " : "" /* spacing */);
+	}
+	return strbuilder_build(b);
+}
+
 char *
-genaction(Action *act, char *reducent, char *prefix)
+genreduce(char *reducent, char *prefix, char *sym, Prod *p)
+{
+	struct strbuilder *b = strbuilder_create();
+	char *prodstr = prod_safestr(p);
+	strbuilder_printf(b,
+"%s/* reduce %s -> %s */\n", prefix, sym, prodstr);
+	free(prodstr);
+	strbuilder_printf(b,
+"%s%s = (struct parseresult) { .nt = \"%s\", .nret = %d };\n", prefix, reducent, 
+		sym, p->n);
+	return strbuilder_build(b);
+}
+
+char *
+genaction(Action *act, char *reducent, char *prefix, struct lrprodset prods)
 {
 	struct strbuilder *b = strbuilder_create();
 	switch (act->type) {
 	case ACTION_ACCEPT:
-		strbuilder_printf(b, 
-"%sreturn 1;	/* acc */\n", prefix);
+		strbuilder_printf(b, "%s/* acc */\n", prefix);
+		strbuilder_puts(b, genreduce(reducent, prefix, prods.sym[0],
+			prods.prod[0]));
 		break;
 	case ACTION_SHIFT:
 		strbuilder_printf(b,
 "%s%s = %s%d();	/* shift */\n", prefix, reducent, YYSTATE_NAME, act->u.state);
 		break;
 	case ACTION_REDUCE:
-		strbuilder_printf(b,
-"%s/* reduce prod %d */\n", prefix, act->u.prod);
+		strbuilder_puts(b, genreduce(reducent, prefix,
+			prods.sym[act->u.prod], prods.prod[act->u.prod]));
 		break;
 	default:
 		fprintf(stderr, "invalid actiontype %d\n", act->type);
@@ -63,101 +89,112 @@ genaction(Action *act, char *reducent, char *prefix)
 }
 
 void
-genstate(FILE *out, int st, struct map *action, struct map *yyterms, char *S)
+gentokenparse(FILE *out, Parser P, int state)
 {
-	fprintf(out,
-"struct parseresult\n"
-"%s%d()\n"
-"{\n", YYSTATE_NAME, st);
-	fprintf(out,
-"	struct parseresult r;\n"
-"	int token = yylex();\n"
-"	switch (token) {\n");
 	bool acc = false;
-	bool foundnts = false;
-	for (int i = 0; i < action->n; i++) {
-		struct entry e = action->entry[i];
+	fprintf(out,
+"		switch (token) {\n");
+	for (int i = 0; i < P.action[state]->n; i++) {
+		struct entry e = P.action[state]->entry[i];
 		if (strcmp(e.key, SYMBOL_EOF) == 0) {
 			acc = true;
 		}
-		int termindex = map_getindex(yyterms, e.key);
+		int termindex = map_getindex(P.yyterms, e.key);
 		if (termindex == -1) { /* nonterminal */
-			foundnts = true;
 			continue;
 		}
 		unsigned long termval = (unsigned long) 
-			yyterms->entry[termindex].value;
+			P.yyterms->entry[termindex].value;
 		fprintf(out,
 "		case %lu: /* %s */\n", termval, safesym(e.key));
-		Action *act = (Action *) map_get(action, e.key);
+		Action *act = (Action *) map_get(P.action[state], e.key);
 		fprintf(out, "%s", genaction(act, "r", 
-"			"));
+"			", P.prods));
 		fprintf(out,
 "			break;\n");
 	}
-	if (acc) {
 	fprintf(out,
 "		default:\n");
+	if (acc) {
 		fprintf(out,
 "			if (token <= 0) { /* EOF */\n");
 		fprintf(out, "%s", genaction(action_accept(), "r",
-"				"));
+"				", P.prods));
 		fprintf(out,
 "			}\n");
 	}
+		fputs(
+"			fprintf(stderr, \"invalid token '%d'\", token);\n"
+"			exit(EXIT_FAILURE);\n", out);
 	fprintf(out,
-"	}\n");
-	if (foundnts && !acc) {
-		fprintf(out,
-"	if (r.nret > 0) {\n"
-"		return (struct parseresult) {.nt = r.nt, .nret = r.nret - 1};\n"
-"	}\n"
-"	return %snt%d(r.nt);\n", YYSTATE_NAME, st);
-		fprintf(out,
-"}\n"
-"\n"
-"struct parseresult\n"
-"%snt%d(char *nt)\n"
-"{\n", YYSTATE_NAME, st);
-		fprintf(out,
-"	struct parseresult r;\n");
-		for (int i = 0; i < action->n; i++) { /* nonterminals */
-			struct entry e = action->entry[i];
-			if (strcmp(e.key, SYMBOL_EOF) == 0) {
-				continue;
-			}
-			if (map_getindex(yyterms, e.key) != -1) { /* terminal */
-				continue;
-			}
-			if (i == 0) {
-				fprintf(out,
-"	if (strcmp(nt, \"%s\") == 0) {\n", e.key);
-			} else {
-				fprintf(out,
-"	} else if (strcmp(nt, \"%s\") == 0) {\n", e.key);
-			}
-			Action *act = (Action *) map_get(action, e.key);
-			assert(act->type == ACTION_SHIFT);
-			fprintf(out, "%s", genaction(act, "r",
-"		"));
+"		}\n");
+}
+
+void
+genntparse(FILE *out, Parser P, int state)
+{
+	bool found = false;
+	for (int i = 0; i < P.action[state]->n; i++) { /* nonterminals */
+		struct entry e = P.action[state]->entry[i];
+		if (strcmp(e.key, SYMBOL_EOF) == 0) {
+			continue;
 		}
-			fputs(
-"	} else {\n"
-"		fprintf(stderr, \"invalid nonterminal '%s'\", nt);\n"
-"		exit(EXIT_FAILURE);\n"
-"	}\n", out);
-		fprintf(out,
-"	if (r.nret > 0) {\n"
-"		return (struct parseresult) {.nt = r.nt, .nret = r.nret - 1};\n"
-"	}\n"
-"	return %snt%d(r.nt);\n", YYSTATE_NAME, st);
-	} else {
-		fprintf(out,
-"	fprintf(stderr, \"invalid token '%%d'\", token);\n"
-"	exit(EXIT_FAILURE);\n");
+		if (map_getindex(P.yyterms, e.key) != -1) { /* terminal */
+			continue;
+		}
+		found = true;
+		if (i == 0) {
+			fprintf(out,
+"		if (strcmp(nt, \"%s\") == 0) {\n", e.key);
+		} else {
+			fprintf(out,
+"		} else if (strcmp(nt, \"%s\") == 0) {\n", e.key);
+		}
+		Action *act = (Action *) map_get(P.action[state], e.key);
+		assert(act->type == ACTION_SHIFT);
+		fprintf(out, "%s", genaction(act, "r",
+"			", P.prods));
 	}
+	if (found) {
+	fputs(
+"		} else {\n"
+"			fprintf(stderr, \"invalid nonterminal '%s'\", nt);\n"
+"			exit(EXIT_FAILURE);\n"
+"		}\n", out);
+	}
+}
+
+void
+genstate(FILE *out, Parser P, int state)
+{
 	fprintf(out,
-"}\n"); 
+"struct parseresult\n"
+"%s%d(struct symbol s)\n"
+"{\n", YYSTATE_NAME, state);
+	fprintf(out,
+"	struct parseresult r;\n"
+"	if (s.terminal) {\n"
+"		int token = s.u.token;\n");
+	gentokenparse(out, P, state);
+	fprintf(out,
+"	} else {\n"
+"		char *nt = s.u.nt;\n");
+	genntparse(out, P, state);
+	fprintf(out,
+"	}\n"
+"	/* pop stack until no more returns and then recurse on the state\n"
+"	 * where we land */\n"
+"	if (r.nret > 0) {\n"
+"		return (struct parseresult) {\n"
+"			.nt = r.nt, .nret = r.nret - 1,\n"
+"		};\n"
+"	}\n"
+"	return %s%d((struct symbol) {\n"
+"		.u = (union symbolval) { .nt = r.nt },\n"
+"		.terminal = false,\n"
+"	});\n", YYSTATE_NAME, state);
+	fprintf(out,
+"}\n");
 }
 
 void
@@ -169,15 +206,23 @@ genstates(FILE *out, Parser P)
 "	size_t nret;	/* remaining returns */\n"
 "};\n"
 "\n"
+"struct symbol {\n"
+"	union symbolval {\n"
+"		int token;\n"
+"		char *nt;\n"
+"	} u;\n"
+"	bool terminal;\n"
+"};\n"
+"\n"
 "struct parseresult\n");
 	for (int i = 0; i < P.nstate; i++) {
 		fprintf(out,
-"%s%d(), %snt%d(char *)%s", YYSTATE_NAME, i, YYSTATE_NAME, i, 
+"%s%d(struct symbol), %snt%d(char *)%s", YYSTATE_NAME, i, YYSTATE_NAME, i, 
 			(i + 1 < P.nstate ? ",\n\t" : ";\n"));
 	}
 	fprintf(out, "\n");
 	for (int i = 0; i < P.nstate; i++) {
-		genstate(out, i, P.action[i], P.yyterms, P.S);
+		genstate(out, P, i);
 		fprintf(out, "\n");
 	}
 }

@@ -26,7 +26,7 @@ int main()
 	Grammar *GG = grammar_augment(G);
 	Parser P = parser_create(GG);
 	Symbolset *order = symbolset_create(
-		"id", "+", "*", "(", ")", "$", "line", "expr", "term", "factor"
+		"id", "+", "*", "(", ")", "\n", "$", "line", "expr", "term", "factor"
 	);
 	char *output = parser_str_ordered(P, order);
 	prod_destroy(order);
