@@ -39,23 +39,21 @@ prepareact(char *action)
 }
 
 char *
-genaction(Action *act, char *reducent)
+genaction(Action *act, char *reducent, char *prefix)
 {
 	struct strbuilder *b = strbuilder_create();
 	switch (act->type) {
 	case ACTION_ACCEPT:
-		strbuilder_printf(b,
-"			return 1;	/* acc */\n");
+		strbuilder_printf(b, 
+"%sreturn 1;	/* acc */\n", prefix);
 		break;
 	case ACTION_SHIFT:
 		strbuilder_printf(b,
-"			%s = %s%d();	/* shift */\n"
-"			break;\n", reducent, 
-			YYSTATE_NAME, act->u.state);
+"%s%s = %s%d();	/* shift */\n", prefix, reducent, YYSTATE_NAME, act->u.state);
 		break;
 	case ACTION_REDUCE:
 		strbuilder_printf(b,
-"			/* reduce prod %d */\n", act->u.prod);
+"%s/* reduce prod %d */\n", prefix, act->u.prod);
 		break;
 	default:
 		fprintf(stderr, "invalid actiontype %d\n", act->type);
@@ -68,14 +66,15 @@ void
 genstate(FILE *out, int st, struct map *action, struct map *yyterms, char *S)
 {
 	fprintf(out,
-"char *\n"
+"struct parseresult\n"
 "%s%d()\n"
 "{\n", YYSTATE_NAME, st);
 	fprintf(out,
-"	char *nt; /* stores reduced nonterminal */\n"
+"	struct parseresult r;\n"
 "	int token = yylex();\n"
 "	switch (token) {\n");
 	bool acc = false;
+	bool foundnts = false;
 	for (int i = 0; i < action->n; i++) {
 		struct entry e = action->entry[i];
 		if (strcmp(e.key, SYMBOL_EOF) == 0) {
@@ -83,6 +82,7 @@ genstate(FILE *out, int st, struct map *action, struct map *yyterms, char *S)
 		}
 		int termindex = map_getindex(yyterms, e.key);
 		if (termindex == -1) { /* nonterminal */
+			foundnts = true;
 			continue;
 		}
 		unsigned long termval = (unsigned long) 
@@ -90,53 +90,90 @@ genstate(FILE *out, int st, struct map *action, struct map *yyterms, char *S)
 		fprintf(out,
 "		case %lu: /* %s */\n", termval, safesym(e.key));
 		Action *act = (Action *) map_get(action, e.key);
-		fprintf(out, "%s", genaction(act, "nt"));
+		fprintf(out, "%s", genaction(act, "r", 
+"			"));
+		fprintf(out,
+"			break;\n");
 	}
+	if (acc) {
 	fprintf(out,
 "		default:\n");
-	if (acc) {
 		fprintf(out,
-"			if (token <= 0) { /* EOF */\n"
-"				return \"%s\";\n"
-"			}\n", S);
+"			if (token <= 0) { /* EOF */\n");
+		fprintf(out, "%s", genaction(action_accept(), "r",
+"				"));
+		fprintf(out,
+"			}\n");
 	}
 	fprintf(out,
-"			fprintf(stderr, \"invalid token '%%d'\", token);\n"
-"			exit(EXIT_FAILURE);\n"
 "	}\n");
-	bool foundnts = false;
-	for (int i = 0; i < action->n; i++) { /* nonterminals */
-		struct entry e = action->entry[i];
-		if (strcmp(e.key, SYMBOL_EOF) == 0) {
-			continue;
-		}
-		if (map_getindex(yyterms, e.key) != -1) { /* terminal */
-			continue;
-		}
-		foundnts = true;
-		if (i == 0) {
-			fprintf(out,
+	if (foundnts && !acc) {
+		fprintf(out,
+"	if (r.nret > 0) {\n"
+"		return (struct parseresult) {.nt = r.nt, .nret = r.nret - 1};\n"
+"	}\n"
+"	return %snt%d(r.nt);\n", YYSTATE_NAME, st);
+		fprintf(out,
+"}\n"
+"\n"
+"struct parseresult\n"
+"%snt%d(char *nt)\n"
+"{\n", YYSTATE_NAME, st);
+		fprintf(out,
+"	struct parseresult r;\n");
+		for (int i = 0; i < action->n; i++) { /* nonterminals */
+			struct entry e = action->entry[i];
+			if (strcmp(e.key, SYMBOL_EOF) == 0) {
+				continue;
+			}
+			if (map_getindex(yyterms, e.key) != -1) { /* terminal */
+				continue;
+			}
+			if (i == 0) {
+				fprintf(out,
 "	if (strcmp(nt, \"%s\") == 0) {\n", e.key);
-		} else {
-			fprintf(out,
+			} else {
+				fprintf(out,
 "	} else if (strcmp(nt, \"%s\") == 0) {\n", e.key);
+			}
+			Action *act = (Action *) map_get(action, e.key);
+			assert(act->type == ACTION_SHIFT);
+			fprintf(out, "%s", genaction(act, "r",
+"		"));
 		}
-	}
-	if (foundnts) {
+			fputs(
+"	} else {\n"
+"		fprintf(stderr, \"invalid nonterminal '%s'\", nt);\n"
+"		exit(EXIT_FAILURE);\n"
+"	}\n", out);
 		fprintf(out,
-"	}\n");
+"	if (r.nret > 0) {\n"
+"		return (struct parseresult) {.nt = r.nt, .nret = r.nret - 1};\n"
+"	}\n"
+"	return %snt%d(r.nt);\n", YYSTATE_NAME, st);
+	} else {
+		fprintf(out,
+"	fprintf(stderr, \"invalid token '%%d'\", token);\n"
+"	exit(EXIT_FAILURE);\n");
 	}
 	fprintf(out,
-"}\n");
+"}\n"); 
 }
 
 void
 genstates(FILE *out, Parser P)
 {
-	fprintf(out, "char ");
+	fprintf(out, 
+"struct parseresult {\n"
+"	char *nt;	/* production head */\n"
+"	size_t nret;	/* remaining returns */\n"
+"};\n"
+"\n"
+"struct parseresult\n");
 	for (int i = 0; i < P.nstate; i++) {
 		fprintf(out,
-"*%s%d()%s", YYSTATE_NAME, i, (i + 1 < P.nstate ? ",\n\t" : ";\n"));
+"%s%d(), %snt%d(char *)%s", YYSTATE_NAME, i, YYSTATE_NAME, i, 
+			(i + 1 < P.nstate ? ",\n\t" : ";\n"));
 	}
 	fprintf(out, "\n");
 	for (int i = 0; i < P.nstate; i++) {

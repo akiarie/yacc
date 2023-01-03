@@ -23,7 +23,7 @@ dynamic_str(const char *s)
 {
 	int len = strlen(s) + 1;
 	char *t = malloc(sizeof(char) * len);
-	snprintf(t, len, "%s", s);
+	strncpy(t, s, len);
 	return t;
 }
 
@@ -203,7 +203,7 @@ strbuilder_append(struct strbuilder *b, char *s, size_t len)
 	int buflen = strlen(b->buf);
 	strbuilder_realloc(b, buflen + len);
 	size_t newlen = buflen + len + 1;
-	snprintf(b->buf + buflen, newlen - buflen, "%s", s);
+	strncpy(b->buf + buflen, s, newlen - buflen);
 }
 
 int
@@ -226,6 +226,14 @@ strbuilder_printf(struct strbuilder *b, const char *fmt, ...)
 	int r = strbuilder_vprintf(b, fmt, ap);
 	va_end(ap);
 	return r;
+}
+
+int
+strbuilder_puts(struct strbuilder *b, char *s)
+{
+	size_t len = strlen(s);
+	strbuilder_append(b, s, len);
+	return len;
 }
 
 void

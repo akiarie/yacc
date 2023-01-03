@@ -247,7 +247,9 @@ prod_row(int i, char *sym, Prod *p)
 	}
 	struct strbuilder *b2 = strbuilder_create();
 	if (p->action) {
-		strbuilder_printf(b2, " { %s }", p->action);
+		strbuilder_puts(b2, " { ");
+		strbuilder_puts(b2, p->action);
+		strbuilder_puts(b2, " }");
 	}
 	return row_inline("sss", strbuilder_build(b), strbuilder_build(b1),
 		strbuilder_build(b2));

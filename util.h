@@ -70,6 +70,9 @@ strbuilder_vprintf(struct strbuilder *b, const char *fmt, va_list ap);
 void
 strbuilder_putc(struct strbuilder *b, char c);
 
+int
+strbuilder_puts(struct strbuilder *b, char *s);
+
 char *
 strbuilder_build(struct strbuilder *b);
 
