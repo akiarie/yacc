@@ -15,6 +15,15 @@ typedef struct {
 	} u;
 } Action;
 
+Action *
+action_accept();
+
+Action *
+action_shift(int st);
+
+Action *
+action_reduce(int prod);
+
 #define DEFAULT_TERM_VALUE 257
 
 typedef struct {
@@ -27,14 +36,14 @@ typedef struct {
 		Prod **prod;
 		size_t n;
 	} prods;
-	struct intmap *terminals; /* map from yylex ints to Grammar terminals */
+	struct map *yyterms; /* map Grammar terminals to yylex int values */
 } Parser;
 
 Parser
 parser_create(Grammar *);
 
 Parser
-parser_create_term(Grammar *, struct intmap *terminals);
+parser_create_term(Grammar *, struct map *yyterms);
 
 void
 parser_destroy(Parser);

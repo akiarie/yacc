@@ -24,6 +24,9 @@ map_create();
 void
 map_destroy(struct map *);
 
+int
+map_getindex(struct map *, const char *key);
+
 void *
 map_get(struct map *, const char *key);
 

@@ -56,7 +56,7 @@ map_destroy(struct map *map)
 	free(map);
 }
 
-static int
+int
 map_getindex(struct map *map, const char *key)
 {
 	assert(key != NULL);

@@ -5,7 +5,6 @@
 #include "grammar.h"
 #include "parser.h"
 #include "table.h"
-#include "maps.h"
 #include "util.h"
 
 static int
@@ -43,13 +42,13 @@ action_create(enum actiontype type)
 	return act;
 }
 
-static Action *
+Action *
 action_accept()
 {
 	return action_create(ACTION_ACCEPT);
 }
 
-static Action *
+Action *
 action_shift(int st)
 {
 	Action *act = action_create(ACTION_SHIFT);
@@ -57,7 +56,7 @@ action_shift(int st)
 	return act;
 }
 
-static Action *
+Action *
 action_reduce(int prod)
 {
 	Action *act = action_create(ACTION_REDUCE);
@@ -140,26 +139,24 @@ getterminals(Grammar *G)
 	return set;
 }
 
-static struct intmap *
-fillterminals(Grammar *G, struct intmap *defined)
+static struct map *
+canonicalterms(Grammar *G, struct map *defined)
 {
-	struct intmap *map = intmap_create();
-	Symbolset *definedterms = prod_create(NULL);
-	int currdefault = DEFAULT_TERM_VALUE;
-	/* copy defined values, keeping start as minimum above all their keys */
+	struct map *map = map_create();
+	unsigned long defindex = DEFAULT_TERM_VALUE;
 	for (int i = 0; i < defined->n; i++) {
-		struct ientry e = defined->entry[i];
-		if (e.key >= currdefault) {
-			currdefault = e.key + 1;
+		struct entry e = defined->entry[i];
+		unsigned long value = (unsigned long) e.value;
+		if (value >= defindex) {
+			defindex = value + 1;
 		}
-		intmap_set(map, e.key, e.value);
-		symbolset_include(definedterms, (char *) e.value);
+		map_set(map, e.key, e.value);
 	}
 	Symbolset *terminals = getterminals(G);
 	for (int i = 0; i < terminals->n; i++) {
-		/* add default value if not defined */
-		if (symbolset_getindex(definedterms, terminals->sym[i]) == -1) {
-			intmap_set(map, currdefault++, terminals->sym[i]);
+		/* only define the undefined */
+		if (map_getindex(map, terminals->sym[i]) == -1) {
+			map_set(map, terminals->sym[i], (void *) defindex++);
 		}
 	}
 	prod_destroy(terminals);
@@ -167,7 +164,7 @@ fillterminals(Grammar *G, struct intmap *defined)
 }
 
 Parser
-parser_create_term(Grammar *G, struct intmap *terminals)
+parser_create_term(Grammar *G, struct map *terminals)
 {
 	Symbol *S = map_get(G->map, G->S); assert(S != NULL && S->n > 0);
 	Itemset start = itemset_create();
@@ -175,7 +172,7 @@ parser_create_term(Grammar *G, struct intmap *terminals)
 	Parser P = (Parser) {
 		.S = G->S, .prods = grammar_prods(G),
 		.nstate = 0, .state = NULL, .action = NULL,
-		.terminals = fillterminals(G, terminals),
+		.yyterms = canonicalterms(G, terminals),
 	};
 	parser_includestate(&P, itemset_closure(start, G));
 	for (int i = 0; i < P.nstate; i++) {
@@ -187,9 +184,9 @@ parser_create_term(Grammar *G, struct intmap *terminals)
 Parser
 parser_create(Grammar *G)
 {
-	struct intmap *empty = intmap_create();
-	Parser P = parser_create_term(G, fillterminals(G, empty));
-	intmap_destroy(empty);
+	struct map *empty = map_create();
+	Parser P = parser_create_term(G, canonicalterms(G, empty));
+	map_destroy(empty);
 	return P;
 }
 

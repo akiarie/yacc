@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <assert.h>
 #include <string.h>
 
 #include "grammar.h"
@@ -37,70 +38,120 @@ prepareact(char *action)
 	return strbuilder_build(b);
 }
 
-void
-genparser(FILE *out, Parser P)
+char *
+genaction(Action *act, char *reducent)
 {
-	fprintf(out,
-"/* TODO: parser */\n"
-"\n"
-"void\n"
-"yyenact(int p)\n"
-"{\n"
-"	switch(p) {\n");
-	for (int i = 1; i < P.prods.n; i++) { /* skip augmented prod 0 */
-		char *sym = P.prods.sym[i];
-		Prod *p = P.prods.prod[i];
-		fprintf(out,
-"	case %d: /* %s */\n"
-"		%s\n"
-"		break;\n", i, genprodstr(sym, p), prepareact(p->action));
+	struct strbuilder *b = strbuilder_create();
+	switch (act->type) {
+	case ACTION_ACCEPT:
+		strbuilder_printf(b,
+"			return 1;	/* acc */\n");
+		break;
+	case ACTION_SHIFT:
+		strbuilder_printf(b,
+"			%s = %s%d();	/* shift */\n"
+"			break;\n", reducent, 
+			YYSTATE_NAME, act->u.state);
+		break;
+	case ACTION_REDUCE:
+		strbuilder_printf(b,
+"			/* reduce prod %d */\n", act->u.prod);
+		break;
+	default:
+		fprintf(stderr, "invalid actiontype %d\n", act->type);
+		exit(EXIT_FAILURE);
 	}
-	fprintf(out,
-"	default:\n"
-"		fprintf(stderr, \"invalid reduction on production %%d\\n\", p);\n"
-"		exit(EXIT_FAILURE);\n"
-"	}\n"
-"}\n"
-"\n"
-"int\n"
-"yystatefunc()\n"
-"{\n"
-"	Action *act = map_get(/* map for this state */, yylex());\n"
-"	if (!act) {\n"
-"		/* handle error */\n"
-"	}\n"
-"	switch (act->type) {\n"
-"	case ACTION_SHIFT:\n"
-"		/* call act->u.state statefunc */;\n"
-"	case ACTION_REDUCE: {\n"
-"		p = P.prods.prod[act->u.prod]->n;\n"
-"		stack_popn(states, p->n);\n"
-"		yyenact(act->u.prod);\n"
-"		continue;\n"
-"	}\n"
-"	case ACTION_ACCEPT:\n"
-"		return 1;\n"
-"	default:\n"
-"		fprintf(stderr, \"unknown action type %%d\\n\", act->type);\n"
-"		exit(EXIT_FAILURE);\n"
-"	}\n"
-"}\n"
-"\n");
+	return strbuilder_build(b);
 }
 
-void gen(FILE *out, Parser P)
+void
+genstate(FILE *out, int st, struct map *action, struct map *yyterms, char *S)
 {
-	genparser(out, P);
 	fprintf(out,
-"Prod *p;\n"
-"struct stack states = stack_create();\n"
-"stack_push(states, 0);\n"
-"while (true) {\n"
-"	Action *act = map_get(P.action[stack_top(states)], yylex());\n"
-"	if (!act) {\n"
-"		/* handle error */\n"
-"	}\n"
+"char *\n"
+"%s%d()\n"
+"{\n", YYSTATE_NAME, st);
+	fprintf(out,
+"	char *nt; /* stores reduced nonterminal */\n"
+"	int token = yylex();\n"
+"	switch (token) {\n");
+	bool acc = false;
+	for (int i = 0; i < action->n; i++) {
+		struct entry e = action->entry[i];
+		if (strcmp(e.key, SYMBOL_EOF) == 0) {
+			acc = true;
+		}
+		int termindex = map_getindex(yyterms, e.key);
+		if (termindex == -1) { /* nonterminal */
+			continue;
+		}
+		unsigned long termval = (unsigned long) 
+			yyterms->entry[termindex].value;
+		fprintf(out,
+"		case %lu: /* %s */\n", termval, safesym(e.key));
+		Action *act = (Action *) map_get(action, e.key);
+		fprintf(out, "%s", genaction(act, "nt"));
+	}
+	fprintf(out,
+"		default:\n");
+	if (acc) {
+		fprintf(out,
+"			if (token <= 0) { /* EOF */\n"
+"				return \"%s\";\n"
+"			}\n", S);
+	}
+	fprintf(out,
+"			fprintf(stderr, \"invalid token '%%d'\", token);\n"
+"			exit(EXIT_FAILURE);\n"
+"	}\n");
+	bool foundnts = false;
+	for (int i = 0; i < action->n; i++) { /* nonterminals */
+		struct entry e = action->entry[i];
+		if (strcmp(e.key, SYMBOL_EOF) == 0) {
+			continue;
+		}
+		if (map_getindex(yyterms, e.key) != -1) { /* terminal */
+			continue;
+		}
+		foundnts = true;
+		if (i == 0) {
+			fprintf(out,
+"	if (strcmp(nt, \"%s\") == 0) {\n", e.key);
+		} else {
+			fprintf(out,
+"	} else if (strcmp(nt, \"%s\") == 0) {\n", e.key);
+		}
+	}
+	if (foundnts) {
+		fprintf(out,
+"	}\n");
+	}
+	fprintf(out,
+"}\n");
+}
 
-"}\n"
-"\n");
+void
+genstates(FILE *out, Parser P)
+{
+	fprintf(out, "char ");
+	for (int i = 0; i < P.nstate; i++) {
+		fprintf(out,
+"*%s%d()%s", YYSTATE_NAME, i, (i + 1 < P.nstate ? ",\n\t" : ";\n"));
+	}
+	fprintf(out, "\n");
+	for (int i = 0; i < P.nstate; i++) {
+		genstate(out, i, P.action[i], P.yyterms, P.S);
+		fprintf(out, "\n");
+	}
+}
+
+void
+gen(FILE *out, Parser P)
+{
+	genstates(out, P);
+	fprintf(out,
+"int\n"
+"yyparse()\n"
+"{\n"
+"}\n");
 }
