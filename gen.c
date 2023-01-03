@@ -75,7 +75,7 @@ genaction(Action *act, char *reducent, char *prefix, struct lrprodset prods)
 		break;
 	case ACTION_SHIFT:
 		strbuilder_printf(b,
-"%s%s = %s%d();	/* shift */\n", prefix, reducent, YYSTATE_NAME, act->u.state);
+"%s%s = %s%d(symbol_yylex());\n", prefix, reducent, YYSTATE_NAME, act->u.state);
 		break;
 	case ACTION_REDUCE:
 		strbuilder_puts(b, genreduce(reducent, prefix,
@@ -189,10 +189,7 @@ genstate(FILE *out, Parser P, int state)
 "			.nt = r.nt, .nret = r.nret - 1,\n"
 "		};\n"
 "	}\n"
-"	return %s%d((struct symbol) {\n"
-"		.u = (union symbolval) { .nt = r.nt },\n"
-"		.terminal = false,\n"
-"	});\n", YYSTATE_NAME, state);
+"	return %s%d(symbol_nt(r.nt));\n", YYSTATE_NAME, state);
 	fprintf(out,
 "}\n");
 }
@@ -214,11 +211,28 @@ genstates(FILE *out, Parser P)
 "	bool terminal;\n"
 "};\n"
 "\n"
+"struct symbol\n"
+"symbol_yylex()\n"
+"{\n"
+"	return (struct symbol) {\n"
+"		.u = (union symbolval) { .token = yylex() },\n"
+"		.terminal = true,\n"
+"	};\n"
+"}\n"
+"\n"
+"struct symbol\n"
+"symbol_nt(char *nt)\n"
+"{\n"
+"	return (struct symbol) {\n"
+"		.u = (union symbolval) { .nt = nt },\n"
+"		.terminal = false,\n"
+"	};\n"
+"}\n"
+"\n"
 "struct parseresult\n");
 	for (int i = 0; i < P.nstate; i++) {
 		fprintf(out,
-"%s%d(struct symbol), %snt%d(char *)%s", YYSTATE_NAME, i, YYSTATE_NAME, i, 
-			(i + 1 < P.nstate ? ",\n\t" : ";\n"));
+"%s%d(struct symbol)%s", YYSTATE_NAME, i, (i + 1 < P.nstate ? ",\n\t" : ";\n"));
 	}
 	fprintf(out, "\n");
 	for (int i = 0; i < P.nstate; i++) {
@@ -235,5 +249,7 @@ gen(FILE *out, Parser P)
 "int\n"
 "yyparse()\n"
 "{\n"
+"	struct parseresult r = %s0(symbol_yylex());\n", YYSTATE_NAME);
+	fprintf(out,
 "}\n");
 }
