@@ -6,65 +6,65 @@
 int
 yylex();
 
-struct parseresult {
+struct yyparseresult {
 	char *nt;	/* production head */
 	size_t nret;	/* remaining returns */
 };
 
-struct symbol {
-	union symbolval {
+struct yysymbol {
+	union yysymbolval {
 		int token;
 		char *nt;
 	} u;
 	bool terminal;
 };
 
-struct symbol
-symbol_yylex()
+struct yysymbol
+yysymbol_yylex()
 {
-	return (struct symbol) {
-		.u = (union symbolval) { .token = yylex() },
+	return (struct yysymbol) {
+		.u = (union yysymbolval) { .token = yylex() },
 		.terminal = true,
 	};
 }
 
-struct symbol
-symbol_nt(char *nt)
+struct yysymbol
+yysymbol_nt(char *nt)
 {
-	return (struct symbol) {
-		.u = (union symbolval) { .nt = nt },
+	return (struct yysymbol) {
+		.u = (union yysymbolval) { .nt = nt },
 		.terminal = false,
 	};
 }
 
-struct parseresult
-yystate0(struct symbol),
-	yystate1(struct symbol),
-	yystate2(struct symbol),
-	yystate3(struct symbol),
-	yystate4(struct symbol),
-	yystate5(struct symbol),
-	yystate6(struct symbol),
-	yystate7(struct symbol),
-	yystate8(struct symbol),
-	yystate9(struct symbol),
-	yystate10(struct symbol),
-	yystate11(struct symbol),
-	yystate12(struct symbol),
-	yystate13(struct symbol);
+struct yyparseresult
+yystate0(struct yysymbol),
+	yystate1(struct yysymbol),
+	yystate2(struct yysymbol),
+	yystate3(struct yysymbol),
+	yystate4(struct yysymbol),
+	yystate5(struct yysymbol),
+	yystate6(struct yysymbol),
+	yystate7(struct yysymbol),
+	yystate8(struct yysymbol),
+	yystate9(struct yysymbol),
+	yystate10(struct yysymbol),
+	yystate11(struct yysymbol),
+	yystate12(struct yysymbol),
+	yystate13(struct yysymbol);
 
-struct parseresult
-yystate0(struct symbol s)
+struct yyparseresult
+yystate0(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 260: /* ( */
-			r = yystate5(symbol_yylex());
+			r = yystate5(yysymbol_yylex());
 			break;
 		case 262: /* id */
-			r = yystate6(symbol_yylex());
+			r = yystate6(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -73,13 +73,13 @@ yystate0(struct symbol s)
 	} else {
 		char *nt = s.u.nt;
 		if (strcmp(nt, "line") == 0) {
-			r = yystate1(symbol_yylex());
+			r = yystate1(yysymbol_yylex());
 		} else if (strcmp(nt, "expr") == 0) {
-			r = yystate2(symbol_yylex());
+			r = yystate2(yysymbol_yylex());
 		} else if (strcmp(nt, "term") == 0) {
-			r = yystate3(symbol_yylex());
+			r = yystate3(yysymbol_yylex());
 		} else if (strcmp(nt, "factor") == 0) {
-			r = yystate4(symbol_yylex());
+			r = yystate4(yysymbol_yylex());
 		} else {
 			fprintf(stderr, "invalid nonterminal '%s'", nt);
 			exit(EXIT_FAILURE);
@@ -88,17 +88,17 @@ yystate0(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate0(symbol_nt(r.nt));
+	return yystate0(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate1(struct symbol s)
+struct yyparseresult
+yystate1(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
@@ -106,7 +106,7 @@ yystate1(struct symbol s)
 			if (token <= 0) { /* EOF */
 				/* acc */
 				/* reduce line' -> line */
-				r = (struct parseresult) { .nt = "line'", .nret = 1 };
+				r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
 			}
 			fprintf(stderr, "invalid token '%d'", token);
 			exit(EXIT_FAILURE);
@@ -117,25 +117,25 @@ yystate1(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate1(symbol_nt(r.nt));
+	return yystate1(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate2(struct symbol s)
+struct yyparseresult
+yystate2(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
-			r = yystate7(symbol_yylex());
+			r = yystate7(yysymbol_yylex());
 			break;
 		case 258: /* + */
-			r = yystate8(symbol_yylex());
+			r = yystate8(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -147,34 +147,34 @@ yystate2(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate2(symbol_nt(r.nt));
+	return yystate2(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate3(struct symbol s)
+struct yyparseresult
+yystate3(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
 			/* reduce expr -> term */
-			r = (struct parseresult) { .nt = "expr", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
 			break;
 		case 258: /* + */
 			/* reduce expr -> term */
-			r = (struct parseresult) { .nt = "expr", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
 			break;
 		case 261: /* ) */
 			/* reduce expr -> term */
-			r = (struct parseresult) { .nt = "expr", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
 			break;
 		case 259: /* * */
-			r = yystate9(symbol_yylex());
+			r = yystate9(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -186,35 +186,35 @@ yystate3(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate3(symbol_nt(r.nt));
+	return yystate3(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate4(struct symbol s)
+struct yyparseresult
+yystate4(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
 			/* reduce term -> factor */
-			r = (struct parseresult) { .nt = "term", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
 		case 258: /* + */
 			/* reduce term -> factor */
-			r = (struct parseresult) { .nt = "term", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
 		case 261: /* ) */
 			/* reduce term -> factor */
-			r = (struct parseresult) { .nt = "term", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
 		case 259: /* * */
 			/* reduce term -> factor */
-			r = (struct parseresult) { .nt = "term", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -226,25 +226,25 @@ yystate4(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate4(symbol_nt(r.nt));
+	return yystate4(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate5(struct symbol s)
+struct yyparseresult
+yystate5(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 260: /* ( */
-			r = yystate5(symbol_yylex());
+			r = yystate5(yysymbol_yylex());
 			break;
 		case 262: /* id */
-			r = yystate6(symbol_yylex());
+			r = yystate6(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -253,11 +253,11 @@ yystate5(struct symbol s)
 	} else {
 		char *nt = s.u.nt;
 		if (strcmp(nt, "expr") == 0) {
-			r = yystate10(symbol_yylex());
+			r = yystate10(yysymbol_yylex());
 		} else if (strcmp(nt, "term") == 0) {
-			r = yystate3(symbol_yylex());
+			r = yystate3(yysymbol_yylex());
 		} else if (strcmp(nt, "factor") == 0) {
-			r = yystate4(symbol_yylex());
+			r = yystate4(yysymbol_yylex());
 		} else {
 			fprintf(stderr, "invalid nonterminal '%s'", nt);
 			exit(EXIT_FAILURE);
@@ -266,35 +266,35 @@ yystate5(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate5(symbol_nt(r.nt));
+	return yystate5(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate6(struct symbol s)
+struct yyparseresult
+yystate6(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
 			/* reduce factor -> id */
-			r = (struct parseresult) { .nt = "factor", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		case 258: /* + */
 			/* reduce factor -> id */
-			r = (struct parseresult) { .nt = "factor", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		case 261: /* ) */
 			/* reduce factor -> id */
-			r = (struct parseresult) { .nt = "factor", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		case 259: /* * */
 			/* reduce factor -> id */
-			r = (struct parseresult) { .nt = "factor", .nret = 1 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -306,17 +306,17 @@ yystate6(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate6(symbol_nt(r.nt));
+	return yystate6(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate7(struct symbol s)
+struct yyparseresult
+yystate7(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
@@ -324,7 +324,7 @@ yystate7(struct symbol s)
 			if (token <= 0) { /* EOF */
 				/* acc */
 				/* reduce line' -> line */
-				r = (struct parseresult) { .nt = "line'", .nret = 1 };
+				r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
 			}
 			fprintf(stderr, "invalid token '%d'", token);
 			exit(EXIT_FAILURE);
@@ -335,25 +335,25 @@ yystate7(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate7(symbol_nt(r.nt));
+	return yystate7(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate8(struct symbol s)
+struct yyparseresult
+yystate8(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 260: /* ( */
-			r = yystate5(symbol_yylex());
+			r = yystate5(yysymbol_yylex());
 			break;
 		case 262: /* id */
-			r = yystate6(symbol_yylex());
+			r = yystate6(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -362,9 +362,9 @@ yystate8(struct symbol s)
 	} else {
 		char *nt = s.u.nt;
 		if (strcmp(nt, "term") == 0) {
-			r = yystate11(symbol_yylex());
+			r = yystate11(yysymbol_yylex());
 		} else if (strcmp(nt, "factor") == 0) {
-			r = yystate4(symbol_yylex());
+			r = yystate4(yysymbol_yylex());
 		} else {
 			fprintf(stderr, "invalid nonterminal '%s'", nt);
 			exit(EXIT_FAILURE);
@@ -373,25 +373,25 @@ yystate8(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate8(symbol_nt(r.nt));
+	return yystate8(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate9(struct symbol s)
+struct yyparseresult
+yystate9(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 260: /* ( */
-			r = yystate5(symbol_yylex());
+			r = yystate5(yysymbol_yylex());
 			break;
 		case 262: /* id */
-			r = yystate6(symbol_yylex());
+			r = yystate6(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -400,7 +400,7 @@ yystate9(struct symbol s)
 	} else {
 		char *nt = s.u.nt;
 		if (strcmp(nt, "factor") == 0) {
-			r = yystate12(symbol_yylex());
+			r = yystate12(yysymbol_yylex());
 		} else {
 			fprintf(stderr, "invalid nonterminal '%s'", nt);
 			exit(EXIT_FAILURE);
@@ -409,25 +409,25 @@ yystate9(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate9(symbol_nt(r.nt));
+	return yystate9(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate10(struct symbol s)
+struct yyparseresult
+yystate10(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 261: /* ) */
-			r = yystate13(symbol_yylex());
+			r = yystate13(yysymbol_yylex());
 			break;
 		case 258: /* + */
-			r = yystate8(symbol_yylex());
+			r = yystate8(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -439,34 +439,34 @@ yystate10(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate10(symbol_nt(r.nt));
+	return yystate10(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate11(struct symbol s)
+struct yyparseresult
+yystate11(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
 			/* reduce expr -> expr + term */
-			r = (struct parseresult) { .nt = "expr", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
 			break;
 		case 258: /* + */
 			/* reduce expr -> expr + term */
-			r = (struct parseresult) { .nt = "expr", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
 			break;
 		case 261: /* ) */
 			/* reduce expr -> expr + term */
-			r = (struct parseresult) { .nt = "expr", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
 			break;
 		case 259: /* * */
-			r = yystate9(symbol_yylex());
+			r = yystate9(yysymbol_yylex());
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -478,35 +478,35 @@ yystate11(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate11(symbol_nt(r.nt));
+	return yystate11(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate12(struct symbol s)
+struct yyparseresult
+yystate12(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
 			/* reduce term -> term * factor */
-			r = (struct parseresult) { .nt = "term", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
 		case 258: /* + */
 			/* reduce term -> term * factor */
-			r = (struct parseresult) { .nt = "term", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
 		case 261: /* ) */
 			/* reduce term -> term * factor */
-			r = (struct parseresult) { .nt = "term", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
 		case 259: /* * */
 			/* reduce term -> term * factor */
-			r = (struct parseresult) { .nt = "term", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -518,35 +518,35 @@ yystate12(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate12(symbol_nt(r.nt));
+	return yystate12(yysymbol_nt(r.nt));
 }
 
-struct parseresult
-yystate13(struct symbol s)
+struct yyparseresult
+yystate13(struct yysymbol s)
 {
-	struct parseresult r;
+	struct yyparseresult r;
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
 		case 257: /* \n */
 			/* reduce factor -> ( expr ) */
-			r = (struct parseresult) { .nt = "factor", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
 		case 258: /* + */
 			/* reduce factor -> ( expr ) */
-			r = (struct parseresult) { .nt = "factor", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
 		case 261: /* ) */
 			/* reduce factor -> ( expr ) */
-			r = (struct parseresult) { .nt = "factor", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
 		case 259: /* * */
 			/* reduce factor -> ( expr ) */
-			r = (struct parseresult) { .nt = "factor", .nret = 3 };
+			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
 		default:
 			fprintf(stderr, "invalid token '%d'", token);
@@ -558,17 +558,17 @@ yystate13(struct symbol s)
 	/* pop stack until no more returns and then recurse on the state
 	 * where we land */
 	if (r.nret > 0) {
-		return (struct parseresult) {
+		return (struct yyparseresult) {
 			.nt = r.nt, .nret = r.nret - 1,
 		};
 	}
-	return yystate13(symbol_nt(r.nt));
+	return yystate13(yysymbol_nt(r.nt));
 }
 
 int
 yyparse()
 {
-	struct parseresult r = yystate0(symbol_yylex());
+	struct yyparseresult r = yystate0(yysymbol_yylex());
 	if (r.nret != 0 || strcmp(r.nt, "line'") != 0) {
 		fprintf(stderr, "unable to parse");
 		return 1;
