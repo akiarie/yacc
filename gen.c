@@ -44,7 +44,7 @@ genparser(FILE *out, Parser P)
 "/* TODO: parser */\n"
 "\n"
 "void\n"
-"enact(int p)\n"
+"yyenact(int p)\n"
 "{\n"
 "	switch(p) {\n");
 	for (int i = 1; i < P.prods.n; i++) { /* skip augmented prod 0 */
@@ -75,7 +75,7 @@ genparser(FILE *out, Parser P)
 "	case ACTION_REDUCE: {\n"
 "		p = P.prods.prod[act->u.prod]->n;\n"
 "		stack_popn(states, p->n);\n"
-"		enact(act->u.prod);\n"
+"		yyenact(act->u.prod);\n"
 "		continue;\n"
 "	}\n"
 "	case ACTION_ACCEPT:\n"

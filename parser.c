@@ -5,6 +5,7 @@
 #include "grammar.h"
 #include "parser.h"
 #include "table.h"
+#include "maps.h"
 #include "util.h"
 
 static int
@@ -108,21 +109,65 @@ grammar_prods(Grammar *G)
 {
 	size_t n = 0; char **sym = NULL; Prod **prod = NULL;
 	for (int i = 0; i < G->map->n; i++) {
-		struct entry *e = G->map->entries[i];
-		Symbol *X = (Symbol *) e->value;
+		struct entry e = G->map->entry[i];
+		Symbol *X = (Symbol *) e.value;
 		for (int j = 0; j < X->n; j++) {
 			int index = n++;
 			sym = realloc(sym, sizeof(char *) * n);
 			prod = realloc(prod, sizeof(Prod *) * n);
-			sym[index] = e->key;
+			sym[index] = e.key;
 			prod[index] = X->prod[j];
 		}
 	}
 	return (struct lrprodset) { sym, prod, n };
 }
 
+static Symbolset *
+getterminals(Grammar *G)
+{
+	Symbolset *set = prod_create(NULL);
+	for (int i = 0; i < G->map->n; i++) {
+		Symbol *X = (Symbol *) G->map->entry[i].value;
+		for (int j = 0; j < X->n; j++) {
+			Prod *p = X->prod[j];
+			for (int k = 0; k < p->n; k++) {
+				if (!map_get(G->map, p->sym[k])) {
+					symbolset_include(set, p->sym[k]);
+				}
+			}
+		}
+	}
+	return set;
+}
+
+static struct intmap *
+fillterminals(Grammar *G, struct intmap *defined)
+{
+	struct intmap *map = intmap_create();
+	Symbolset *definedterms = prod_create(NULL);
+	int currdefault = DEFAULT_TERM_VALUE;
+	/* copy defined values, keeping start as minimum above all their keys */
+	for (int i = 0; i < defined->n; i++) {
+		struct ientry e = defined->entry[i];
+		if (e.key >= currdefault) {
+			currdefault = e.key + 1;
+		}
+		intmap_set(map, e.key, e.value);
+		symbolset_include(definedterms, (char *) e.value);
+	}
+	Symbolset *terminals = getterminals(G);
+	for (int i = 0; i < terminals->n; i++) {
+		/* add default value if not defined */
+		if (symbolset_getindex(definedterms, terminals->sym[i]) == -1) {
+			intmap_set(map, currdefault++, terminals->sym[i]);
+		}
+	}
+	prod_destroy(terminals);
+	return map;
+}
+
 Parser
-parser_create(Grammar *G)
+parser_create_term(Grammar *G, struct intmap *terminals)
 {
 	Symbol *S = map_get(G->map, G->S); assert(S != NULL && S->n > 0);
 	Itemset start = itemset_create();
@@ -130,11 +175,21 @@ parser_create(Grammar *G)
 	Parser P = (Parser) {
 		.S = G->S, .prods = grammar_prods(G),
 		.nstate = 0, .state = NULL, .action = NULL,
+		.terminals = fillterminals(G, terminals),
 	};
 	parser_includestate(&P, itemset_closure(start, G));
 	for (int i = 0; i < P.nstate; i++) {
 		stateshifts(&P, G, i);
 	}
+	return P;
+}
+
+Parser
+parser_create(Grammar *G)
+{
+	struct intmap *empty = intmap_create();
+	Parser P = parser_create_term(G, fillterminals(G, empty));
+	intmap_destroy(empty);
 	return P;
 }
 
@@ -145,7 +200,7 @@ parser_destroy(Parser P)
 	for (int i = 0; i < P.nstate; i++) {
 		struct map *action = P.action[i];
 		for (int j = 0; j < action->n; j++) {
-			action_destroy((Action *) action->entries[j]->value);
+			action_destroy((Action *) action->entry[j].value);
 		}
 		map_destroy(action);
 	}

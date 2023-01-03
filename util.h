@@ -14,7 +14,7 @@ struct map {
 	struct entry {
 		char *key;
 		const void *value;
-	} **entries;
+	} *entry;
 	size_t n;
 };
 
@@ -26,9 +26,6 @@ map_destroy(struct map *);
 
 void *
 map_get(struct map *, const char *key);
-
-int
-map_getindex(struct map *map, const char *key);
 
 void *
 map_set_act(struct map *, const char *key, const void *value, bool overwrite);

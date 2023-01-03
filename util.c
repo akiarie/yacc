@@ -27,21 +27,17 @@ dynamic_str(const char *s)
 	return t;
 }
 
-static struct entry *
+static struct entry
 entry_create(const char *key, const void *value)
 {
 	assert(key != NULL && value != NULL);
-	struct entry *e = malloc(sizeof(struct entry));
-	e->key = dynamic_str(key);
-	e->value = value;
-	return e;
+	return (struct entry) { dynamic_str(key), value };
 }
 
 static void
-entry_destroy(struct entry *e)
+entry_destroy(struct entry e)
 {
-	free(e->key);
-	free(e);
+	free(e.key);
 }
 
 struct map *
@@ -54,18 +50,18 @@ void
 map_destroy(struct map *map)
 {
 	for (int i = 0; i < map->n; i++) {
-		entry_destroy(map->entries[i]);
+		entry_destroy(map->entry[i]);
 	}
-	free(map->entries);
+	free(map->entry);
 	free(map);
 }
 
-int
+static int
 map_getindex(struct map *map, const char *key)
 {
 	assert(key != NULL);
 	for (int i = 0; i < map->n; i++) {
-		if (strcmp(map->entries[i]->key, key) == 0) {
+		if (strcmp(map->entry[i].key, key) == 0) {
 			return i;
 		}
 	}
@@ -75,10 +71,9 @@ map_getindex(struct map *map, const char *key)
 void *
 map_get(struct map *map, const char *key)
 {
-	assert(key != NULL);
 	int index = map_getindex(map, key);
 	if (index != -1) {
-		return (void *) map->entries[index]->value;
+		return (void *) map->entry[index].value;
 	}
 	return NULL;
 }
@@ -89,13 +84,12 @@ map_set_act(struct map *map, const char *key, const void *value, bool overwrite)
 	int index = map_getindex(map, key);
 	if (index >= 0) {
 		assert(overwrite);
-		void *old = (void *) map->entries[index]->value;
-		map->entries[index]->value = value;
+		void *old = (void *) map->entry[index].value;
+		map->entry[index].value = value;
 		return old;
 	}
-	map->entries = (struct entry **) realloc(map->entries,
-		sizeof(struct entry *) * ++map->n);
-	map->entries[map->n - 1] = entry_create(key, value);
+	map->entry = realloc(map->entry, sizeof(struct entry) * ++map->n);
+	map->entry[map->n - 1] = entry_create(key, value);
 	return NULL;
 }
 

@@ -278,7 +278,7 @@ void
 grammar_destroy(Grammar *G)
 {
 	for (int i = 0; i < G->map->n; i++) {
-		symbol_destroy((Symbol *) G->map->entries[i]->value);
+		symbol_destroy((Symbol *) G->map->entry[i].value);
 	}
 	map_destroy(G->map);
 	free(G->S);
@@ -296,12 +296,12 @@ maxntlen(const Grammar *G)
 {
 	int len = 0;
 	for (int i = 0; i < G->map->n; i++) {
-		struct entry *e = G->map->entries[i];
-		Symbol *X = (Symbol *) e->value;
+		struct entry e = G->map->entry[i];
+		Symbol *X = (Symbol *) e.value;
 		if (X->n == 0) {
 			continue;
 		}
-		len = max(len, strlen(e->key));
+		len = max(len, strlen(e.key));
 	}
 	return len;
 }
@@ -348,13 +348,13 @@ grammar_str(const Grammar *G)
 	int padding = maxntlen(G) + 1;
 	strbuilder_printf(b, "%s", grammar_symbol_str(G, G->S, padding));
 	for (int i = 0; i < G->map->n; i++) {
-		struct entry *e = G->map->entries[i];
-		Symbol *X = (Symbol *) e->value;
-		if (X->n == 0 || strcmp(e->key, G->S) == 0) {
+		struct entry e = G->map->entry[i];
+		Symbol *X = (Symbol *) e.value;
+		if (X->n == 0 || strcmp(e.key, G->S) == 0) {
 			continue;
 		}
 		strbuilder_printf(b, "\n%s",
-			grammar_symbol_str(G, e->key, padding));
+			grammar_symbol_str(G, e.key, padding));
 	}
 	return strbuilder_build(b);
 }
@@ -363,9 +363,9 @@ static bool
 grammar_eq_act(Grammar *G, Grammar *H)
 {
 	for (int i = 0; i < G->map->n; i++) {
-		struct entry *e = G->map->entries[i];
-		Symbol *X = map_get(H->map, e->key);
-		if (!X || !symbol_eq(X, e->value)) {
+		struct entry e = G->map->entry[i];
+		Symbol *X = map_get(H->map, e.key);
+		if (!X || !symbol_eq(X, e.value)) {
 			return false;
 		}
 	}
@@ -451,8 +451,8 @@ grammar_copy(const Grammar *G)
 {
 	Grammar *H = grammar_create(G->S);
 	for (int i = 0; i < G->map->n; i++) {
-		struct entry *e = G->map->entries[i];
-		map_set(H->map, e->key, symbol_copy(e->value));
+		struct entry e = G->map->entry[i];
+		map_set(H->map, e.key, symbol_copy(e.value));
 	}
 	return H;
 }
@@ -463,9 +463,9 @@ grammar_unleftrec(const Grammar *G)
 	Grammar *H = grammar_copy(G);
 	/* must iterate on G's map because H->map is changing */
 	for (int i = 0; i < G->map->n; i++) {
-		const char *sym = G->map->entries[i]->key;
+		const char *sym = G->map->entry[i].key;
 		for (int j = 0; j < i; j++) {
-			grammar_overstep(H, sym, G->map->entries[j]->key);
+			grammar_overstep(H, sym, G->map->entry[j].key);
 		}
 		grammar_unleftrec_immediate(H, sym);
 	}
@@ -527,7 +527,7 @@ grammar_leftfactor(const Grammar *G)
 	Grammar *H = grammar_copy(G);
 	/* must iterate on G's map because H->map is changing */
 	for (int i = 0; i < G->map->n; i++) {
-		grammar_leftfactor_sym(H, G->map->entries[i]->key);
+		grammar_leftfactor_sym(H, G->map->entry[i].key);
 	}
 	return H;
 }
@@ -737,8 +737,8 @@ grammar_follow_act(const Grammar *G, char *sym, struct circuitbreaker *tr)
 	}
 	/* 2. and 3. */
 	for (int i = 0; i < G->map->n; i++) {
-		struct entry *e = G->map->entries[i];
-		Symbolset *fllws = symbolset_computefollow(G, sym, e->key, tr);
+		struct entry e = G->map->entry[i];
+		Symbolset *fllws = symbolset_computefollow(G, sym, e.key, tr);
 		symbolset_includerange(set, fllws);
 	}
 	return set;
@@ -836,7 +836,7 @@ bool
 grammar_isLL1(const Grammar *G)
 {
 	for (int i = 0; i < G->map->n; i++) {
-		if (!grammar_symLL1(G, G->map->entries[i]->key)) {
+		if (!grammar_symLL1(G, G->map->entry[i].key)) {
 			return false;
 		}
 	}
