@@ -244,6 +244,15 @@ genstates(FILE *out, Parser P)
 void
 gen(FILE *out, Parser P)
 {
+	fputs(
+"#include <stdio.h>\n"
+"#include <stdlib.h>\n"
+"#include <stdbool.h>\n"
+"#include <string.h>\n"
+"\n"
+"int\n"
+"yylex();\n"
+"\n", out);
 	genstates(out, P);
 	fprintf(out,
 "int\n"
@@ -251,5 +260,11 @@ gen(FILE *out, Parser P)
 "{\n"
 "	struct parseresult r = %s0(symbol_yylex());\n", YYSTATE_NAME);
 	fprintf(out,
+"	if (r.nret != 0 || strcmp(r.nt, \"%s\") != 0) {\n", P.S);
+	fprintf(out,
+"		fprintf(stderr, \"unable to parse\");\n"
+"		return 1;\n"
+"	}\n"
+"	return 0;\n"
 "}\n");
 }

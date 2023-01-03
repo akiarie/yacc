@@ -9,5 +9,4 @@ lex
 *.gch
 *.dSYM
 a.out
-lex_gen.c
 input.txt
