@@ -17,7 +17,8 @@ factor	: '(' expr ')'		{ $$ = $2; }
 	| DIGIT
 	;
 %%
-int yylex()
+int
+yylex()
 {
 	int c = getchar();
 	if (isdigit(c)) {
