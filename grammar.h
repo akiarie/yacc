@@ -17,7 +17,7 @@ typedef struct symbolset {
 } Prod;
 
 Prod *
-prod_create(char *action);
+prod_create();
 
 void
 prod_destroy(Prod *p);
@@ -45,24 +45,24 @@ prod_isepsilon(Prod *);
 typedef struct prodset {
 	size_t n;
 	Prod **prod;
-} Symbol;
+} Nonterminal;
 
-Symbol *
+Nonterminal *
 symbol_create();
 
 void
-symbol_destroy(Symbol *);
+symbol_destroy(Nonterminal *);
 
 void
-symbol_addprod(Symbol *, Prod *);
+symbol_addprod(Nonterminal *, Prod *);
 
-Symbol *
+Nonterminal *
 symbol_inline_act(Prod *, ...);
 
 #define symbol_inline(...) symbol_inline_act(__VA_ARGS__, NULL)
 
 char *
-symbol_str(const Symbol *, const Grammar *);
+symbol_str(const Nonterminal *, const Grammar *);
 
 struct grammar {
 	char *S; /* start symbol */

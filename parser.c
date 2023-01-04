@@ -109,7 +109,7 @@ grammar_prods(Grammar *G)
 	size_t n = 0; char **sym = NULL; Prod **prod = NULL;
 	for (int i = 0; i < G->map->n; i++) {
 		struct entry e = G->map->entry[i];
-		Symbol *X = (Symbol *) e.value;
+		Nonterminal *X = (Nonterminal *) e.value;
 		for (int j = 0; j < X->n; j++) {
 			int index = n++;
 			sym = realloc(sym, sizeof(char *) * n);
@@ -126,7 +126,7 @@ getterminals(Grammar *G)
 {
 	Symbolset *set = prod_create(NULL);
 	for (int i = 0; i < G->map->n; i++) {
-		Symbol *X = (Symbol *) G->map->entry[i].value;
+		Nonterminal *X = (Nonterminal *) G->map->entry[i].value;
 		for (int j = 0; j < X->n; j++) {
 			Prod *p = X->prod[j];
 			for (int k = 0; k < p->n; k++) {
@@ -166,7 +166,7 @@ canonicalterms(Grammar *G, struct map *defined)
 Parser
 parser_create_term(Grammar *G, char *precode, char *postcode, struct map *terminals)
 {
-	Symbol *S = map_get(G->map, G->S); assert(S != NULL && S->n > 0);
+	Nonterminal *S = map_get(G->map, G->S); assert(S != NULL && S->n > 0);
 	Itemset start = itemset_create();
 	itemset_add(&start, item_create(G->S, S->prod[0], 0));
 	Parser P = (Parser) {

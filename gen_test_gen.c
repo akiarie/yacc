@@ -57,8 +57,6 @@ yystate0(struct yysymbol),
 	yystate12(struct yysymbol),
 	yystate13(struct yysymbol);
 
-#define DIGIT 262
-
 struct yyparseresult
 yystate0(struct yysymbol s)
 {
@@ -592,10 +590,4 @@ yylex()
 		return DIGIT;
 	}
 	return c;
-}
-
-int 
-main()
-{
-	return yyparse();
 }

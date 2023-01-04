@@ -136,7 +136,7 @@ lex(char *pos)
 	return tokens;
 }
 
-static Symbol *
+static Nonterminal *
 map_getorset(struct map *map, char *key)
 {
 	if (!map_get(map, key)) {
@@ -146,7 +146,7 @@ map_getorset(struct map *map, char *key)
 }
 
 static size_t
-symbol_parseprod(Symbol *X, Token *start)
+symbol_parseprod(Nonterminal *X, Token *start)
 {
 	Token *tk = start;
 	if (tk->type != TOKEN_SYMBOL) {
@@ -188,7 +188,7 @@ grammar_parsenonterm(Grammar *G, Token *start)
 			tktype_str(tk->type));
 		exit(EXIT_FAILURE);
 	}
-	Symbol *X = map_getorset(G->map, tk->value);
+	Nonterminal *X = map_getorset(G->map, tk->value);
 	assert(X != NULL);
 	tk++;
 	if (tk->type != TOKEN_ARROW) {

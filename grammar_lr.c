@@ -19,8 +19,8 @@ grammar_prime(const Grammar *G, const char *X);
 char *
 prod_head(Prod *p);
 
-Symbol *
-symbol_copy(const Symbol *X);
+Nonterminal *
+symbol_copy(const Nonterminal *X);
 
 Prod *
 prod_subrange(const Prod *p, unsigned int start, unsigned int end);
@@ -29,7 +29,7 @@ Grammar *
 grammar_augment(const Grammar *G)
 {
 	Grammar *GG = grammar_create(grammar_prime(G, G->S));
-	Symbol *SS = symbol_create();
+	Nonterminal *SS = symbol_create();
 	symbol_addprod(SS, prod_inline(NULL, G->S));
 	map_set(GG->map, GG->S, SS);
 	for (int i = 0; i < G->map->n; i++) {
@@ -94,7 +94,7 @@ static Itemset
 itemset_fromsym(char *sym, Grammar *G)
 {
 	Itemset I = itemset_create();
-	Symbol *X = map_get(G->map, sym);
+	Nonterminal *X = map_get(G->map, sym);
 	if (!X) {
 		return I;
 	}

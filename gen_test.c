@@ -5,7 +5,8 @@
 #include "gen.h"
 #include "util.h"
 
-int main()
+int
+main()
 {
 	Grammar *G = grammar_create("line");
 	map_set(G->map, "line", symbol_inline(
@@ -23,6 +24,8 @@ int main()
 		prod_inline("$$ = $2;", "(", "expr", ")"),
 		prod_inline(NULL, "DIGIT")
 	));
+	printf("%s\n", grammar_str(G));
+	return 1;
 	Grammar *GG = grammar_augment(G);
 	Parser P = parser_create(GG, 
 /* preamble */
@@ -44,10 +47,6 @@ int main()
 	Symbolset *order = symbolset_create(
 		"id", "+", "*", "(", ")", "\n", "$", "line", "expr", "term", "factor"
 	);
-	char *output = parser_str_ordered(P, order);
-	prod_destroy(order);
-	printf("%s\n", output);
-	free(output);
 	gen(stdout, P);
 	parser_destroy(P);
 	grammar_destroy(G);

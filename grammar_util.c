@@ -180,7 +180,7 @@ prefixnode_insertprod(struct prefixnode *np, Prod *p, int prodind)
 static struct prefixnode *
 prefixnode_fromsymbol(const Grammar *G, const char *sym)
 {
-	Symbol *X = map_get(G->map, sym); assert(X != NULL);
+	Nonterminal *X = map_get(G->map, sym); assert(X != NULL);
 	struct prefixnode *np = prefixnode_create(NULL, 0);
 	for (int i = 0; i < X->n; i++) {
 		prefixnode_insertprod(np, X->prod[i], i);
@@ -219,7 +219,7 @@ prefixnode_gcf(struct prefixnode *np)
 }
 
 static Prod *
-prefixnode_commonprefix(struct prefixnode *np, Symbol *X)
+prefixnode_commonprefix(struct prefixnode *np, Nonterminal *X)
 {
 	if (np->nprod == 0) {
 		return NULL;

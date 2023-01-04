@@ -156,26 +156,26 @@ prod_str(const Prod *p, const Grammar *G)
 	return strbuilder_build(b);
 }
 
-Symbol *
+Nonterminal *
 symbol_create()
 {
-	return (Symbol *) calloc(1, sizeof(Symbol));
+	return (Nonterminal *) calloc(1, sizeof(Nonterminal));
 }
 
-Symbol *
-symbol_copy(const Symbol *X)
+Nonterminal *
+symbol_copy(const Nonterminal *X)
 {
-	Symbol *Y = symbol_create();
+	Nonterminal *Y = symbol_create();
 	for (int i = 0; i < X->n; i++) {
 		symbol_addprod(Y, prod_copy(X->prod[i]));
 	}
 	return Y;
 }
 
-Symbol *
+Nonterminal *
 symbol_inline_act(Prod *p0, ...)
 {
-	Symbol *X = symbol_create();
+	Nonterminal *X = symbol_create();
 	va_list ap;
 	va_start(ap, p0);
 	for (Prod *p = p0; p; p = va_arg(ap, Prod *)) {
@@ -186,7 +186,7 @@ symbol_inline_act(Prod *p0, ...)
 }
 
 void
-symbol_destroy(Symbol *X)
+symbol_destroy(Nonterminal *X)
 {
 	for (int i = 0; i < X->n; i++) {
 		prod_destroy(X->prod[i]);
@@ -195,7 +195,7 @@ symbol_destroy(Symbol *X)
 }
 
 void
-symbol_addprodind(Symbol *X, Prod *p, int index)
+symbol_addprodind(Nonterminal *X, Prod *p, int index)
 {
 	assert(X != NULL && index <= X->n);
 	/* ensure epsilon remains on end */
@@ -210,13 +210,13 @@ symbol_addprodind(Symbol *X, Prod *p, int index)
 }
 
 void
-symbol_addprod(Symbol *X, Prod *p)
+symbol_addprod(Nonterminal *X, Prod *p)
 {
 	symbol_addprodind(X, p, X->n);
 }
 
 static int
-symbol_mustgetprodindex(Symbol *X, Prod *p)
+symbol_mustgetprodindex(Nonterminal *X, Prod *p)
 {
 	for (int i = 0; i < X->n; i++) {
 		if (prod_eq(p, X->prod[i])) {
@@ -228,7 +228,7 @@ symbol_mustgetprodindex(Symbol *X, Prod *p)
 
 /* symbol_delprod: remove production and return its index */
 static int
-symbol_delprod(Symbol *X, Prod *p)
+symbol_delprod(Nonterminal *X, Prod *p)
 {
 	int index = symbol_mustgetprodindex(X, p);
 	for (int i = index + 1; i < X->n; i++) {
@@ -239,7 +239,7 @@ symbol_delprod(Symbol *X, Prod *p)
 }
 
 static bool
-symbol_eq(const Symbol *X, const Symbol *Y)
+symbol_eq(const Nonterminal *X, const Nonterminal *Y)
 {
 	if (X->n != Y->n) {
 		return false;
@@ -253,7 +253,7 @@ symbol_eq(const Symbol *X, const Symbol *Y)
 }
 
 char *
-symbol_str(const Symbol *X, const Grammar *G)
+symbol_str(const Nonterminal *X, const Grammar *G)
 {
 	struct strbuilder *b = strbuilder_create();
 	for (int i = 0; i < X->n; i++) {
@@ -278,7 +278,7 @@ void
 grammar_destroy(Grammar *G)
 {
 	for (int i = 0; i < G->map->n; i++) {
-		symbol_destroy((Symbol *) G->map->entry[i].value);
+		symbol_destroy((Nonterminal *) G->map->entry[i].value);
 	}
 	map_destroy(G->map);
 	free(G->S);
@@ -297,7 +297,7 @@ maxntlen(const Grammar *G)
 	int len = 0;
 	for (int i = 0; i < G->map->n; i++) {
 		struct entry e = G->map->entry[i];
-		Symbol *X = (Symbol *) e.value;
+		Nonterminal *X = (Nonterminal *) e.value;
 		if (X->n == 0) {
 			continue;
 		}
@@ -332,7 +332,7 @@ grammar_symbol_name(const Grammar *G, char *sym)
 static char *
 grammar_symbol_str(const Grammar *G, const char *sym, int padding)
 {
-	Symbol *X = map_get(G->map, sym);
+	Nonterminal *X = map_get(G->map, sym);
 	assert(X != NULL);
 	struct strbuilder *b = strbuilder_create();
 	strbuilder_printf(b, "%-*s→ %s", padding, sym, symbol_str(X, G));
@@ -343,13 +343,13 @@ char *
 grammar_str(const Grammar *G)
 {
 	struct strbuilder *b = strbuilder_create();
-	Symbol *S = map_get(G->map, G->S);
+	Nonterminal *S = map_get(G->map, G->S);
 	assert(S != NULL);
 	int padding = maxntlen(G) + 1;
 	strbuilder_printf(b, "%s", grammar_symbol_str(G, G->S, padding));
 	for (int i = 0; i < G->map->n; i++) {
 		struct entry e = G->map->entry[i];
-		Symbol *X = (Symbol *) e.value;
+		Nonterminal *X = (Nonterminal *) e.value;
 		if (X->n == 0 || strcmp(e.key, G->S) == 0) {
 			continue;
 		}
@@ -364,7 +364,7 @@ grammar_eq_act(Grammar *G, Grammar *H)
 {
 	for (int i = 0; i < G->map->n; i++) {
 		struct entry e = G->map->entry[i];
-		Symbol *X = map_get(H->map, e.key);
+		Nonterminal *X = map_get(H->map, e.key);
 		if (!X || !symbol_eq(X, e.value)) {
 			return false;
 		}
@@ -393,7 +393,7 @@ grammar_prime(const Grammar *G, const char *X)
 static void
 grammar_overstep(Grammar *G, const char *symX, const char *symY)
 {
-	Symbol *X = map_get(G->map, symX),
+	Nonterminal *X = map_get(G->map, symX),
 	       *Y = map_get(G->map, symY);
 	assert(X != NULL && Y != NULL);
 	for (int i = 0; i < X->n; i++) {
@@ -416,9 +416,9 @@ grammar_overstep(Grammar *G, const char *symX, const char *symY)
 static void
 grammar_unleftrec_immediate(Grammar *G, const char *sym)
 {
-	Symbol *X = map_get(G->map, sym); assert(X != NULL);
-	Symbol *new = symbol_create();
-	Symbol *X_ = symbol_create();
+	Nonterminal *X = map_get(G->map, sym); assert(X != NULL);
+	Nonterminal *new = symbol_create();
+	Nonterminal *X_ = symbol_create();
 	char *prime = grammar_prime(G, sym);
 	for (int i = 0; i < X->n; i++) {
 		Prod *p = X->prod[i];
@@ -478,14 +478,14 @@ grammar_leftfactor_sym(const Grammar *, const char *);
 static bool
 grammar_leftfactor_sym_act(const Grammar *G, const char *sym,
 		struct prefixnode *np) {
-	Symbol *X = map_get(G->map, sym); assert(X != NULL);
+	Nonterminal *X = map_get(G->map, sym); assert(X != NULL);
 	struct prefixnode *gcf = prefixnode_gcf(np);
 	assert(gcf != NULL && gcf->nprod > 0);
 	if (gcf->nprod == 1) { /* no common prefixes */
 		return false;
 	}
-	Symbol *new = symbol_copy(X);
-	Symbol *X_ = symbol_create();
+	Nonterminal *new = symbol_copy(X);
+	Nonterminal *X_ = symbol_create();
 	for (int i = 0; i < gcf->nprod; i++) {
 		Prod *p = X->prod[gcf->prod[i]];
 		/* remove new → p */
@@ -603,7 +603,7 @@ Symbolset *
 grammar_first(const Grammar *G, char *sym)
 {
 	Symbolset *set = prod_create(NULL);
-	Symbol *X = map_get(G->map, sym);
+	Nonterminal *X = map_get(G->map, sym);
 	if (X == NULL) { /* X terminal */
 		symbolset_include(set, sym);
 		return set;
@@ -670,7 +670,7 @@ symbolset_firstafter(const Grammar *G, Symbolset *set, char *sym)
 }
 
 static bool
-symbolset_followsubset(const Grammar *G, char *sym, Symbol *X)
+symbolset_followsubset(const Grammar *G, char *sym, Nonterminal *X)
 {
 	for (int i = 0; i < X->n; i++) {
 		Symbolset *set = symbolset_firstafter(G, X->prod[i], sym);
@@ -712,7 +712,7 @@ symbolset_computefollow(const Grammar *G, char *sym, char *symX,
 		struct circuitbreaker *tr)
 {
 	Symbolset *set = prod_create(NULL);
-	Symbol *X = map_get(G->map, symX);
+	Nonterminal *X = map_get(G->map, symX);
 	assert(X != NULL);
 	/* 2. */
 	for (int i = 0; i < X->n; i++) {
@@ -758,7 +758,7 @@ grammar_follow(const Grammar *G, char *sym)
 static char *
 grammar_sym_LL1cond12(const Grammar *G, char *sym)
 {
-	Symbol *X = map_get(G->map, sym);
+	Nonterminal *X = map_get(G->map, sym);
 	assert(X != NULL);
 	Symbolset *enc = prod_create(NULL); /* symbols already encountered */
 	for (int i = 0; i < X->n; i++) {
@@ -779,7 +779,7 @@ grammar_sym_LL1cond12(const Grammar *G, char *sym)
 /* grammar_sym_prodeps: return index of first production with ε in its FIRST, or
  * -1 if no such production exists. */
 static int
-grammar_sym_prodeps(const Grammar *G, Symbol *X)
+grammar_sym_prodeps(const Grammar *G, Nonterminal *X)
 {
 	for (int i = 0; i < X->n; i++) {
 		Prod *p = X->prod[i];
@@ -806,7 +806,7 @@ symbolset_disjoint(Symbolset *s1, Symbolset *s2)
 static char *
 grammar_sym_LL1cond3(const Grammar *G, char *sym)
 {
-	Symbol *X = map_get(G->map, sym);
+	Nonterminal *X = map_get(G->map, sym);
 	assert(X != NULL);
 	int eps = grammar_sym_prodeps(G, X);
 	if (eps < 0) {
