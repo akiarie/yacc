@@ -20,7 +20,7 @@ char *
 prod_head(Prod *p);
 
 Nonterminal *
-symbol_copy(const Nonterminal *X);
+nonterminal_copy(const Nonterminal *X);
 
 Prod *
 prod_subrange(const Prod *p, unsigned int start, unsigned int end);
@@ -29,12 +29,12 @@ Grammar *
 grammar_augment(const Grammar *G)
 {
 	Grammar *GG = grammar_create(grammar_prime(G, G->S));
-	Nonterminal *SS = symbol_create();
-	symbol_addprod(SS, prod_inline(NULL, G->S));
+	Nonterminal *SS = nonterminal_create();
+	nonterminal_addprod(SS, prod_inline(NULL, G->S));
 	map_set(GG->map, GG->S, SS);
 	for (int i = 0; i < G->map->n; i++) {
 		struct entry e = G->map->entry[i];
-		map_set(GG->map, e.key, symbol_copy(e.value));
+		map_set(GG->map, e.key, nonterminal_copy(e.value));
 	}
 	return GG;
 }

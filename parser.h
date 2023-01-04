@@ -36,7 +36,7 @@ typedef struct {
 		Prod **prod;
 		size_t n;
 	} prods;
-	struct map *yyterms; /* map Grammar terminals to yylex int values */
+	struct map *yyterms; /* non-literal terminals → yylex-returned integers */
 	char *precode, *postcode;
 } Parser;
 

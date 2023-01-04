@@ -10,6 +10,9 @@
 
 typedef struct grammar Grammar;
 
+bool
+isliteral(char *sym);
+
 typedef struct symbolset {
 	size_t n;
 	char **sym;
@@ -48,21 +51,21 @@ typedef struct prodset {
 } Nonterminal;
 
 Nonterminal *
-symbol_create();
+nonterminal_create();
 
 void
-symbol_destroy(Nonterminal *);
+nonterminal_destroy(Nonterminal *);
 
 void
-symbol_addprod(Nonterminal *, Prod *);
+nonterminal_addprod(Nonterminal *, Prod *);
 
 Nonterminal *
-symbol_inline_act(Prod *, ...);
+nonterminal_inline_act(Prod *, ...);
 
-#define symbol_inline(...) symbol_inline_act(__VA_ARGS__, NULL)
+#define nonterminal_inline(...) nonterminal_inline_act(__VA_ARGS__, NULL)
 
 char *
-symbol_str(const Nonterminal *, const Grammar *);
+nonterminal_str(const Nonterminal *, const Grammar *);
 
 struct grammar {
 	char *S; /* start symbol */

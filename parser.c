@@ -147,16 +147,25 @@ canonicalterms(Grammar *G, struct map *defined)
 	for (int i = 0; i < defined->n; i++) {
 		struct entry e = defined->entry[i];
 		unsigned long value = (unsigned long) e.value;
+		/* if the value is in ASCII region, it must be a char whose
+		 * value is its literal char value */
+		if (value < DEFAULT_TERM_VALUE && 
+				(strlen(e.key) != 1 || *e.key != value)) {
+			fprintf(stderr, "invalid token value %lu for '%s'\n", 
+				value, e.key);
+			exit(EXIT_FAILURE);
+		}
 		if (value >= defindex) {
 			defindex = value + 1;
 		}
 		map_set(map, e.key, e.value);
 	}
 	Symbolset *terminals = getterminals(G);
+	/* define the undefined non-literals */
 	for (int i = 0; i < terminals->n; i++) {
-		/* only define the undefined */
-		if (map_getindex(map, terminals->sym[i]) == -1) {
-			map_set(map, terminals->sym[i], (void *) defindex++);
+		char *sym = terminals->sym[i];
+		if (!isliteral(sym) && map_getindex(map, sym) == -1) {
+			map_set(map, sym, (void *) defindex++);
 		}
 	}
 	prod_destroy(terminals);

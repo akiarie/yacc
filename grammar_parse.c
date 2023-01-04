@@ -140,13 +140,13 @@ static Nonterminal *
 map_getorset(struct map *map, char *key)
 {
 	if (!map_get(map, key)) {
-		map_set(map, key, symbol_create());
+		map_set(map, key, nonterminal_create());
 	}
 	return map_get(map, key);
 }
 
 static size_t
-symbol_parseprod(Nonterminal *X, Token *start)
+nonterminal_parseprod(Nonterminal *X, Token *start)
 {
 	Token *tk = start;
 	if (tk->type != TOKEN_SYMBOL) {
@@ -164,7 +164,7 @@ symbol_parseprod(Nonterminal *X, Token *start)
 		}
 		prod_append(p, tk->value);
 	}
-	symbol_addprod(X, p);
+	nonterminal_addprod(X, p);
 	return tk - start;
 }
 
@@ -196,9 +196,9 @@ grammar_parsenonterm(Grammar *G, Token *start)
 			tktype_str(TOKEN_ARROW));
 		exit(EXIT_FAILURE);
 	}
-	/* symbol_parseprod advances X->n */
+	/* nonterminal_parseprod advances X->n */
 	while (tk->type == divisor(X->n)) {
-		size_t len = symbol_parseprod(X, ++tk);
+		size_t len = nonterminal_parseprod(X, ++tk);
 		tk += len;
 	}
 	if (tk->type & (TOKEN_SEMICOLON | TOKEN_EOF)) {

@@ -10,6 +10,9 @@ int yylval;
 int
 yylex();
 
+/* TOKEN DEFINITIONS */
+#define DIGIT 257
+
 struct yyparseresult {
 	char *nt;	/* production head */
 	size_t nret;	/* remaining returns */
@@ -64,14 +67,14 @@ yystate0(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 260: /* ( */
+		case '(':
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* DIGIT */
+		case DIGIT:
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -85,7 +88,7 @@ yystate0(struct yysymbol s)
 		} else if (strcmp(nt, "factor") == 0) {
 			r = yystate4(yysymbol_yylex());
 		} else {
-			fprintf(stderr, "invalid nonterminal '%s'", nt);
+			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -106,13 +109,18 @@ yystate1(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
+		case '$':
+			/* acc */
+			/* reduce line' -> line */
+			r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
+			break;
 		default:
 			if (token <= 0) { /* EOF */
 				/* acc */
 				/* reduce line' -> line */
 				r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
 			}
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -135,14 +143,14 @@ yystate2(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 257: /* \n */
+		case '\n':
 			r = yystate7(yysymbol_yylex());
 			break;
-		case 258: /* + */
+		case '+':
 			r = yystate8(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -165,23 +173,23 @@ yystate3(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 257: /* \n */
+		case '\n':
 			/* reduce expr -> term */
 			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
 			break;
-		case 258: /* + */
+		case '+':
 			/* reduce expr -> term */
 			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
 			break;
-		case 261: /* ) */
+		case ')':
 			/* reduce expr -> term */
 			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
 			break;
-		case 259: /* * */
+		case '*':
 			r = yystate9(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -204,24 +212,24 @@ yystate4(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 257: /* \n */
+		case '\n':
 			/* reduce term -> factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
-		case 258: /* + */
+		case '+':
 			/* reduce term -> factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
-		case 261: /* ) */
+		case ')':
 			/* reduce term -> factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
-		case 259: /* * */
+		case '*':
 			/* reduce term -> factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -244,14 +252,14 @@ yystate5(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 260: /* ( */
+		case '(':
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* DIGIT */
+		case DIGIT:
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -263,7 +271,7 @@ yystate5(struct yysymbol s)
 		} else if (strcmp(nt, "factor") == 0) {
 			r = yystate4(yysymbol_yylex());
 		} else {
-			fprintf(stderr, "invalid nonterminal '%s'", nt);
+			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -284,24 +292,24 @@ yystate6(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 257: /* \n */
+		case '\n':
 			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
-		case 258: /* + */
+		case '+':
 			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
-		case 261: /* ) */
+		case ')':
 			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
-		case 259: /* * */
+		case '*':
 			/* reduce factor -> DIGIT */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -324,13 +332,17 @@ yystate7(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
+		case '$':
+			/* reduce line -> expr \n */
+			r = (struct yyparseresult) { .nt = "line", .nret = 2 };
+			break;
 		default:
 			if (token <= 0) { /* EOF */
 				/* acc */
 				/* reduce line' -> line */
 				r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
 			}
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -353,14 +365,14 @@ yystate8(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 260: /* ( */
+		case '(':
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* DIGIT */
+		case DIGIT:
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -370,7 +382,7 @@ yystate8(struct yysymbol s)
 		} else if (strcmp(nt, "factor") == 0) {
 			r = yystate4(yysymbol_yylex());
 		} else {
-			fprintf(stderr, "invalid nonterminal '%s'", nt);
+			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -391,14 +403,14 @@ yystate9(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 260: /* ( */
+		case '(':
 			r = yystate5(yysymbol_yylex());
 			break;
-		case 262: /* DIGIT */
+		case DIGIT:
 			r = yystate6(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -406,7 +418,7 @@ yystate9(struct yysymbol s)
 		if (strcmp(nt, "factor") == 0) {
 			r = yystate12(yysymbol_yylex());
 		} else {
-			fprintf(stderr, "invalid nonterminal '%s'", nt);
+			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -427,14 +439,14 @@ yystate10(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 261: /* ) */
+		case ')':
 			r = yystate13(yysymbol_yylex());
 			break;
-		case 258: /* + */
+		case '+':
 			r = yystate8(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -457,23 +469,23 @@ yystate11(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 257: /* \n */
+		case '\n':
 			/* reduce expr -> expr + term */
 			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
 			break;
-		case 258: /* + */
+		case '+':
 			/* reduce expr -> expr + term */
 			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
 			break;
-		case 261: /* ) */
+		case ')':
 			/* reduce expr -> expr + term */
 			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
 			break;
-		case 259: /* * */
+		case '*':
 			r = yystate9(yysymbol_yylex());
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -496,24 +508,24 @@ yystate12(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 257: /* \n */
+		case '\n':
 			/* reduce term -> term * factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
-		case 258: /* + */
+		case '+':
 			/* reduce term -> term * factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
-		case 261: /* ) */
+		case ')':
 			/* reduce term -> term * factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
-		case 259: /* * */
+		case '*':
 			/* reduce term -> term * factor */
 			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -536,24 +548,24 @@ yystate13(struct yysymbol s)
 	if (s.terminal) {
 		int token = s.u.token;
 		switch (token) {
-		case 257: /* \n */
+		case '\n':
 			/* reduce factor -> ( expr ) */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
-		case 258: /* + */
+		case '+':
 			/* reduce factor -> ( expr ) */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
-		case 261: /* ) */
+		case ')':
 			/* reduce factor -> ( expr ) */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
-		case 259: /* * */
+		case '*':
 			/* reduce factor -> ( expr ) */
 			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
 			break;
 		default:
-			fprintf(stderr, "invalid token '%d'", token);
+			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
 			exit(EXIT_FAILURE);
 		}
 	} else {
@@ -590,4 +602,10 @@ yylex()
 		return DIGIT;
 	}
 	return c;
+}
+
+int
+main()
+{
+	return yyparse();
 }

@@ -8,21 +8,12 @@
 #include "util.h"
 
 static char *
-safesym(char *sym)
-{
-	if (strcmp(sym, "\n") == 0) {
-		return "\\n";
-	}
-	return sym;
-}
-
-static char *
 genprodstr(char *sym, Prod *p)
 {
 	struct strbuilder *b = strbuilder_create();
 	strbuilder_printf(b, "%s -> ", sym);
 	for (int j = 0; j < p->n; j++) {
-		strbuilder_printf(b, "%s%s", safesym(p->sym[j]),
+		strbuilder_printf(b, "%s%s", p->sym[j],
 			(j + 1 < p->n) ? " " : "" /* spacing */);
 	}
 	return strbuilder_build(b);
@@ -43,7 +34,7 @@ prod_safestr(Prod *p)
 {
 	struct strbuilder *b = strbuilder_create();
 	for (int i = 0; i < p->n; i++) {
-		strbuilder_printf(b, "%s%s", safesym(p->sym[i]),
+		strbuilder_printf(b, "%s%s", p->sym[i],
 			(i + 1 < p->n) ? " " : "" /* spacing */);
 	}
 	return strbuilder_build(b);
@@ -99,14 +90,18 @@ gentokenparse(FILE *out, Parser P, int state)
 		if (strcmp(e.key, SYMBOL_EOF) == 0) {
 			acc = true;
 		}
-		int termindex = map_getindex(P.yyterms, e.key);
-		if (termindex == -1) { /* nonterminal */
-			continue;
+		/* only output cases for literals and yyterms */
+		if (isliteral(e.key)) {
+			fprintf(out,
+"		case '%s':\n", e.key);
+		} else {
+			/* skip nonterminals */
+			if (map_getindex(P.yyterms, e.key) == -1) {
+				continue;
+			}
+			fprintf(out,
+"		case %s:\n", e.key);
 		}
-		unsigned long termval = (unsigned long) 
-			P.yyterms->entry[termindex].value;
-		fprintf(out,
-"		case %lu: /* %s */\n", termval, safesym(e.key));
 		Action *act = (Action *) map_get(P.action[state], e.key);
 		fprintf(out, "%s", genaction(act, "r", 
 "			", P.prods));
@@ -124,7 +119,7 @@ gentokenparse(FILE *out, Parser P, int state)
 "			}\n");
 	}
 		fputs(
-"			fprintf(stderr, \"invalid token '%d'\", token);\n"
+"			fprintf(stderr, \"invalid token '%d' on line %d\\n\", token, __LINE__);\n"
 "			exit(EXIT_FAILURE);\n", out);
 	fprintf(out,
 "		}\n");
@@ -139,7 +134,8 @@ genntparse(FILE *out, Parser P, int state)
 		if (strcmp(e.key, SYMBOL_EOF) == 0) {
 			continue;
 		}
-		if (map_getindex(P.yyterms, e.key) != -1) { /* terminal */
+		if (map_getindex(P.yyterms, e.key) != -1
+				|| isliteral(e.key)) { /* terminal */
 			continue;
 		}
 		found = true;
@@ -158,7 +154,7 @@ genntparse(FILE *out, Parser P, int state)
 	if (found) {
 	fputs(
 "		} else {\n"
-"			fprintf(stderr, \"invalid nonterminal '%s'\", nt);\n"
+"			fprintf(stderr, \"invalid nonterminal '%s'\\n\", nt);\n"
 "			exit(EXIT_FAILURE);\n"
 "		}\n", out);
 	}
@@ -195,9 +191,23 @@ genstate(FILE *out, Parser P, int state)
 }
 
 void
+gentokens(FILE *out, struct map *yyterms)
+{
+	fputs(
+"/* TOKEN DEFINITIONS */\n", out);
+	for (int i = 0; i < yyterms->n; i++) {
+		struct entry e = yyterms->entry[i];
+		fprintf(out,
+"#define %s %lu\n", e.key, (unsigned long) e.value);
+	}
+}
+
+void
 genstates(FILE *out, Parser P)
 {
+	gentokens(out, P.yyterms);
 	fprintf(out, 
+"\n"
 "struct yyparseresult {\n"
 "	char *nt;	/* production head */\n"
 "	size_t nret;	/* remaining returns */\n"
