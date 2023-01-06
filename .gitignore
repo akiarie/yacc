@@ -9,4 +9,4 @@ lex
 *.gch
 *.dSYM
 a.out
-input.txt
+table.txt
