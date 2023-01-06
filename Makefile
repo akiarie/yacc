@@ -5,6 +5,18 @@ OBJECTS = util.o table.o grammar.o parser.o gen.o
 
 GRAMMAR_INC = grammar_parse.c grammar_util.c grammar_lr.c
 
+yacc: main.c
+	@printf '\CC\t$@\n'
+	@$(CC) -o $@ -ly -ll $<
+
+main.c: yaccgen
+	@printf '\GEN\t$@\n'
+	@./$< > $@
+
+yaccgen: yacc.c $(HEADERS) $(OBJECTS)
+	@printf '\CC\t$@\n'
+	@$(CC) -o $@ yacc.c $(OBJECTS)
+
 util.o: util.h util.c
 	@printf '\CC\t$@\n'
 	@$(CC) -c util.c
@@ -40,7 +52,7 @@ clean-tests:
 	@rm -f *_test
 
 clean: clean-tests
-	@rm -f $(OBJECTS) *.gch a.out
+	@rm -f $(OBJECTS) *.gch a.out main.c yaccgen yacc
 	@rm -rf *.dSYM
 
 .PHONY: clean clean-tests

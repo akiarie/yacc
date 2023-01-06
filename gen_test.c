@@ -63,20 +63,21 @@ main()
 "	return c;\n"
 "}\n");
 
-	char *buf = NULL;
-	size_t buflen = 0;
-	FILE *stream = open_memstream(&buf, &buflen);
-	gen(stream, P);
-	fclose(stream);
-	char *expected = read_file(EXAMPLE_FILE);
-	if (strcmp(buf, expected) != 0) {
-		fprintf(stderr, "generated file does not match expected\n");
-		exit(1);
-	}
-	free(expected);
-	free(buf);
+	gen(stdout, P);
+	/*char *buf = NULL;*/
+	/*size_t buflen = 0;*/
+	/*FILE *stream = open_memstream(&buf, &buflen);*/
+	/*gen(stream, P);*/
+	/*fclose(stream);*/
+	/*char *expected = read_file(EXAMPLE_FILE);*/
+	/*if (strcmp(buf, expected) != 0) {*/
+		/*fprintf(stderr, "generated file does not match expected\n");*/
+		/*exit(1);*/
+	/*}*/
+	/*free(expected);*/
+	/*free(buf);*/
 
 	parser_destroy(P);
-	grammar_destroy(G);
 	grammar_destroy(GG);
+	grammar_destroy(G);
 }

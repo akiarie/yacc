@@ -3,6 +3,7 @@
 
 #define YY_STATE_ACTION "yystaction"
 #define YY_STATE_GOTO "yystgoto"
+#define YY_REDUCE_VAL "val"
 
 void
 gen(FILE *, Parser);

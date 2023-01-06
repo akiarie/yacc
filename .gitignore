@@ -8,5 +8,6 @@ lex
 *_test
 *.gch
 *.dSYM
+main.c
 a.out
 table.txt

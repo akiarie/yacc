@@ -69,13 +69,14 @@ gentabletypes(FILE *out)
 "	stack->val[index] = val;\n"
 "}\n"
 "\n"
-"void\n"
+"int\n"
 "yystack_popn(YYStack *stack, int n)\n"
 "{\n"
-"	assert(n < stack->len);\n"
+"	assert(0 < n && n < stack->len);\n"
 "	for (int i = 0; i < n; i++) {\n"
 "		stack->len--;\n"
 "	}\n"
+"	return stack->val[stack->len]; /* i.e. the last item popped */\n"
 "}\n"
 "\n"
 "int\n"
@@ -83,6 +84,13 @@ gentabletypes(FILE *out)
 "{\n"
 "	assert(stack->len > 0);\n"
 "	return stack->val[stack->len - 1];\n"
+"}\n"
+"\n"
+"int\n"
+"yystack_1n(YYStack *stack, int n)\n"
+"{\n"
+"	assert(0 < n && n <= stack->len);\n"
+"	return stack->val[stack->len - n];\n"
 "}\n"
 "\n"
 "enum yyactiontype {\n"
@@ -149,18 +157,71 @@ genreduce(struct lrprodset prods, int k)
 }
 
 char *
-genaction(Action *act, struct lrprodset prods)
+translateact(char *s)
 {
+	struct strbuilder *b = strbuilder_create();
+	for (; *s; s++) {
+		if (*s != '$') {
+			strbuilder_putc(b, *s);
+			continue;
+		}
+		switch (*++s) {
+		case '$':
+			strbuilder_printf(b, "%s", YY_REDUCE_VAL);
+			continue;
+		default:
+			assert('0' <= *s && *s <= '9');
+			strbuilder_printf(b, "yystack_1n(values, %c)", *s);
+		}
+	}
+	return strbuilder_build(b);
+}
+
+char *
+genvalues(char *action, char *prefix)
+{
+	struct strbuilder *b = strbuilder_create();
+	if (!action) {
+		action = "$$ = $1;";
+	}
+	char *s = translateact(action);
+	strbuilder_printf(b,
+"%s/* action %s */\n"
+"%s%s\n", prefix, action, prefix, s);
+	free(s);
+	return strbuilder_build(b);
+}
+
+char *
+genaction(Action *act, struct lrprodset prods, char *prefix)
+{
+	char *vals;
 	struct strbuilder *b = strbuilder_create();
 	char *reduce;
 	switch (act->type) {
 	case ACTION_SHIFT:
-		strbuilder_printf(b, "yyaction_shift(%d);", act->u.state);
+		strbuilder_printf(b, 
+"%sreturn yyaction_shift(%d);\n", prefix, act->u.state);
 		break;
 	case ACTION_REDUCE:
+		vals = genvalues(prods.prod[act->u.prod]->action, prefix);
+		strbuilder_printf(b, "%s", vals);
+		free(vals);
+		strbuilder_printf(b, 
+"%syystack_popn(values, %lu);\n", prefix, prods.prod[act->u.prod]->n);
+		strbuilder_printf(b, 
+"%syystack_push(values, val);\n", prefix);
 		reduce = genreduce(prods, act->u.prod);
-		strbuilder_puts(b, reduce);
+		strbuilder_printf(b, 
+"%sreturn %s\n", prefix, reduce);
 		free(reduce);
+		break;
+	case ACTION_ACCEPT:
+		vals = genvalues(prods.prod[act->u.prod]->action, prefix);
+		strbuilder_printf(b, "%s", vals);
+		free(vals);
+		strbuilder_printf(b, 
+"%sreturn yyaction_accept();\n", prefix);
 		break;
 	default:
 		fprintf(stderr, "invalid actiontype %d\n", act->type);
@@ -184,37 +245,49 @@ genstateaction(FILE *out, Parser P, int state, char *prefix)
 		/* only output cases for (non-accepting) literals and yyterms */
 		if (isliteral(e.key)) {
 			fprintf(out,
-"%s	case '%s':\n", prefix, e.key);
+"%scase '%s':\n", prefix, e.key);
 		} else {
 			if (map_getindex(P.yyterms, e.key) == -1) { /* nonterminal */
 				continue;
 			}
 			fprintf(out,
-"%s	case %s:\n", prefix, e.key);
+"%scase %s:\n", prefix, e.key);
 		}
-		char *action = genaction(map_get(P.action[state], e.key), P.prods);
-		fprintf(out, 
-"%s		return %s\n", prefix, action);
+		struct strbuilder *b = strbuilder_create();
+		strbuilder_printf(b,
+"%s	", prefix);
+		char *subprefix = strbuilder_build(b);
+		char *action = genaction(map_get(P.action[state], e.key),
+			P.prods, subprefix);
+		free(subprefix);
+		fprintf(out, "%s", action);
 		free(action);
 	}
 	fprintf(out,
-"%s	default:\n", prefix);
+"%sdefault:\n", prefix);
 	if (eof) {
 		fprintf(out,
-"%s		if (token <= 0) {\n"
-"%s			return yyaction_accept();\n"
-"%s		}\n", prefix, prefix, prefix);
+"%s	if (token <= 0) {\n", prefix);
+		struct strbuilder *b = strbuilder_create();
+		strbuilder_printf(b,
+"%s		", prefix);
+		char *subprefix = strbuilder_build(b);
+		char *action = genaction(action_accept(), P.prods, subprefix);
+		free(subprefix);
+		fprintf(out, "%s", action);
+		fprintf(out,
+"%s	}\n", prefix);
 	}
 	fprintf(out,
-"%s		fprintf(stderr, \"invalid token %%d in state %%d\\n\", token, state);\n"
-"%s		exit(EXIT_FAILURE);\n"
+"%s	fprintf(stderr, \"invalid token %%d in state %%d\\n\", token, state);\n"
+"%s	exit(EXIT_FAILURE);\n"
 "%s}\n", prefix, prefix, prefix);
 }
 
 void
 genstategoto(FILE *out, Parser P, int state, char *prefix)
 {
-	bool found = false;
+	int found = 0;
 	for (int i = 0; i < P.action[state]->n; i++) {
 		struct entry e = P.action[state]->entry[i];
 		/* nonterminals only */
@@ -222,10 +295,10 @@ genstategoto(FILE *out, Parser P, int state, char *prefix)
 				strcmp(e.key, SYMBOL_EOF) == 0) {
 			continue;
 		}
-		found = true;
+		found++;
 		/* prefix with conditional else */
 		fprintf(out,
-"%s%s", prefix, (i > 0 ? "} else ": ""));
+"%s%s", prefix, (found > 1 ? "} else ": ""));
 		fprintf(out,
 		"if (strcmp(nt, \"%s\") == 0) {\n", e.key);
 		Action *act = (Action *) map_get(P.action[state], e.key);
@@ -233,7 +306,7 @@ genstategoto(FILE *out, Parser P, int state, char *prefix)
 		fprintf(out,
 "%s	return %d;\n", prefix, act->u.state);
 	}
-	if (found) {
+	if (found > 0) {
 		fprintf(out,
 "%s}\n", prefix);
 	}
@@ -252,15 +325,17 @@ gentable(FILE *out, Parser P)
 	fprintf(out, 
 "\n"
 "YYAction\n"
-"%s(int state, int token)\n", YY_STATE_ACTION);
+"%s(int state, int token, YYStack *values)\n", YY_STATE_ACTION);
 	fprintf(out,
 "{\n"
+"	int %s;\n", YY_REDUCE_VAL);
+	fprintf(out,
 "	switch (state) {\n");
 	for (int i = 0; i < P.nstate; i++) {
 		fprintf(out,
-"		case %d:\n", i);
+"	case %d:\n", i);
 		genstateaction(out, P, i,
-"			");
+"		");
 	}
 	fprintf(out,
 "	}\n"
@@ -276,9 +351,9 @@ gentable(FILE *out, Parser P)
 "	switch (state) {\n");
 	for (int i = 0; i < P.nstate; i++) {
 		fprintf(out,
-"		case %d:\n", i);
+"	case %d:\n", i);
 		genstategoto(out, P, i,
-"			");
+"		");
 	}
 	fprintf(out,
 "	}\n"
@@ -307,27 +382,29 @@ gen(FILE *out, Parser P)
 "int\n"
 "yyparse()\n"
 "{\n"
-"	YYStack *states = yystack_create(0);\n"
 "	int token = yylex();\n"
+"	YYStack *values = yystack_create(yylval);\n"
+"	YYStack *states = yystack_create(0);\n"
 "	while (1) {\n");
 	fprintf(out,
-"		YYAction act = %s(yystack_top(states), token);\n", YY_STATE_ACTION);
+"		YYAction act = %s(yystack_top(states), token, values);\n",
+		YY_STATE_ACTION);
 	fprintf(out,
 "		switch (act.type) {\n"
-"			case YYACTION_SHIFT:\n"
-"				yystack_push(states, act.u.state);\n"
-"				token = yylex();\n"
-"				continue;\n"
-"			case YYACTION_REDUCE:\n"
-"				yystack_popn(states, act.u.r.len);\n"
-"				yystack_push(states,\n"
-"					%s(yystack_top(states), act.u.r.nt));\n"
-"				continue;\n",
+"		case YYACTION_SHIFT:\n"
+"			yystack_push(states, act.u.state);\n"
+"			token = yylex();\n"
+"			yystack_push(values, yylval);\n"
+"			continue;\n"
+"		case YYACTION_REDUCE:\n"
+"			yystack_popn(states, act.u.r.len);\n"
+"			yystack_push(states, %s(yystack_top(states), act.u.r.nt));\n"
+"			continue;\n",
 		YY_STATE_GOTO);
 	fprintf(out,
-"			case YYACTION_ACCEPT:\n"
-"				yystack_destroy(states);\n"
-"				return 0;\n"
+"		case YYACTION_ACCEPT:\n"
+"			yystack_destroy(states);\n"
+"			return 0;\n"
 "		}\n"
 "		assert(false); /* invalid action type */\n"
 "	}\n"
