@@ -216,22 +216,13 @@ parser_destroy(Parser P)
 	free(P.prods.prod);
 }
 
-static char *
-safesym(char *sym)
-{
-	if (strcmp(sym, "\n") == 0) {
-		return "\\n";
-	}
-	return sym;
-}
-
 static Row *
 parser_title(Parser P, Symbolset *symbols)
 {
 	Row *title = row_create(repeat('s', symbols->n + 1));
 	row_appendstring(title, "STATE");
 	for (int i = 0; i < symbols->n; i++) {
-		row_appendstring(title, safesym(symbols->sym[i]));
+		row_appendstring(title, symbols->sym[i]);
 	}
 	return title;
 }
@@ -252,7 +243,7 @@ prod_row(int i, char *sym, Prod *p)
 	struct strbuilder *b1 = strbuilder_create();
 	strbuilder_printf(b1, "%s -> ", sym);
 	for (int j = 0; j < p->n; j++) {
-		strbuilder_printf(b1, "%s%s", safesym(p->sym[j]),
+		strbuilder_printf(b1, "%s%s", p->sym[j],
 			(j + 1 < p->n) ? " " : "" /* spacing */);
 	}
 	struct strbuilder *b2 = strbuilder_create();

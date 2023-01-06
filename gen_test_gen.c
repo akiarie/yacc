@@ -14,46 +14,67 @@ yylex();
 /* TOKEN DEFINITIONS */
 #define DIGIT 257
 
+#define DEFAULT_CAP 100
+#define CAP_MULT 2
+
 typedef struct yystack {
-	struct yystack *next;
-	int val;
+	int *val;
+	size_t len, cap;
 } YYStack;
+
+void
+yystack_alloc(YYStack *stack, size_t len)
+{
+	assert(len >= 0 && stack->cap > 0);
+	while (stack->cap <= len) {
+		stack->cap *= CAP_MULT;
+	}
+	stack->val = realloc(stack->val, sizeof(int) * stack->cap);
+	stack->len = len;
+}
 
 YYStack *
 yystack_create(int val)
 {
 	YYStack *stack = calloc(1, sizeof(YYStack));
-	stack->val = val;
+	stack->cap = DEFAULT_CAP;
+	stack->val = malloc(sizeof(int) * stack->cap);
+	stack->val[0] = val;
+	stack->len = 1;
 	return stack;
 }
 
 void
 yystack_destroy(YYStack *stack)
 {
-	if (stack->next) {
-		yystack_destroy(stack->next);
-	}
+	free(stack->val);
 	free(stack);
 }
 
 void
 yystack_push(YYStack *stack, int val)
 {
-	stack->next = yystack_create(val);
+	int index = stack->len;
+	yystack_alloc(stack, stack->len + 1);
+	/* stack->len increases above */
+	stack->val[index] = val;
 }
 
-YYStack *
+void
 yystack_popn(YYStack *stack, int n)
 {
+	assert(n < stack->len);
 	for (int i = 0; i < n; i++) {
-		YYStack *last = stack;
-		stack = stack->next;
-		assert(stack);
-		yystack_destroy(last);
+		stack->len--;
 	}
-	return stack;
 }
 
+int
+yystack_top(YYStack *stack)
+{
+	assert(stack->len > 0);
+	return stack->val[stack->len - 1];
+}
 
 enum yyactiontype {
 	YYACTION_ACCEPT	= 1 << 0,
@@ -344,18 +365,22 @@ yyparse()
 	YYStack *states = yystack_create(0);
 	int token = yylex();
 	while (1) {
-		YYAction act = yystaction(states->val, token);
+		YYAction act = yystaction(yystack_top(states), token);
 		switch (act.type) {
 			case YYACTION_SHIFT:
 				yystack_push(states, act.u.state);
 				token = yylex();
+				continue;
 			case YYACTION_REDUCE:
 				yystack_popn(states, act.u.r.len);
-				yystack_push(states, yystgoto(states->val, act.u.r.nt));
+				yystack_push(states,
+					yystgoto(yystack_top(states), act.u.r.nt));
+				continue;
 			case YYACTION_ACCEPT:
 				yystack_destroy(states);
 				return 0;
 		}
+		assert(false); /* invalid action type */
 	}
 }
 
@@ -368,10 +393,4 @@ yylex()
 		return DIGIT;
 	}
 	return c;
-}
-
-int
-main()
-{
-	return yyparse();
 }
