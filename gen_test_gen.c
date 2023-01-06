@@ -5,6 +5,7 @@ int yylval;
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <assert.h>
 #include <string.h>
 
 int
@@ -13,585 +14,350 @@ yylex();
 /* TOKEN DEFINITIONS */
 #define DIGIT 257
 
-struct yyparseresult {
-	char *nt;	/* production head */
-	size_t nret;	/* remaining returns */
+typedef struct yystack {
+	struct yystack *next;
+	int val;
+} YYStack;
+
+YYStack *
+yystack_create(int val)
+{
+	YYStack *stack = calloc(1, sizeof(YYStack));
+	stack->val = val;
+	return stack;
+}
+
+void
+yystack_destroy(YYStack *stack)
+{
+	if (stack->next) {
+		yystack_destroy(stack->next);
+	}
+	free(stack);
+}
+
+void
+yystack_push(YYStack *stack, int val)
+{
+	stack->next = yystack_create(val);
+}
+
+YYStack *
+yystack_popn(YYStack *stack, int n)
+{
+	for (int i = 0; i < n; i++) {
+		YYStack *last = stack;
+		stack = stack->next;
+		assert(stack);
+		yystack_destroy(last);
+	}
+	return stack;
+}
+
+
+enum yyactiontype {
+	YYACTION_ACCEPT	= 1 << 0,
+	YYACTION_SHIFT	= 1 << 1,
+	YYACTION_REDUCE	= 1 << 2,
 };
 
-struct yysymbol {
-	union yysymbolval {
-		int token;
-		char *nt;
+typedef struct {
+	enum yyactiontype type;
+	union yyactunion {
+		int state;	/* shift */
+		struct yyreduce {
+			char *nt;	/* nonterminal */
+			size_t len;	/* number of symbols */
+		} r;
 	} u;
-	bool terminal;
-};
+} YYAction;
 
-struct yysymbol
-yysymbol_yylex()
+YYAction
+yyaction_accept()
 {
-	return (struct yysymbol) {
-		.u = (union yysymbolval) { .token = yylex() },
-		.terminal = true,
+	return (YYAction) { YYACTION_ACCEPT };
+}
+
+YYAction
+yyaction_shift(int st)
+{
+	return (YYAction) { YYACTION_SHIFT, (union yyactunion) { .state = st } };
+}
+
+YYAction
+yyaction_reduce(char *nt, size_t len)
+{
+	return (YYAction) {
+		YYACTION_REDUCE, (union yyactunion) {
+			.r = (struct yyreduce) { nt, len }
+		}
 	};
 }
 
-struct yysymbol
-yysymbol_nt(char *nt)
+YYAction
+yystaction(int state, int token)
 {
-	return (struct yysymbol) {
-		.u = (union yysymbolval) { .nt = nt },
-		.terminal = false,
-	};
-}
-
-struct yyparseresult
-yystate0(struct yysymbol),
-	yystate1(struct yysymbol),
-	yystate2(struct yysymbol),
-	yystate3(struct yysymbol),
-	yystate4(struct yysymbol),
-	yystate5(struct yysymbol),
-	yystate6(struct yysymbol),
-	yystate7(struct yysymbol),
-	yystate8(struct yysymbol),
-	yystate9(struct yysymbol),
-	yystate10(struct yysymbol),
-	yystate11(struct yysymbol),
-	yystate12(struct yysymbol),
-	yystate13(struct yysymbol);
-
-struct yyparseresult
-yystate0(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '(':
-			r = yystate5(yysymbol_yylex());
-			break;
-		case DIGIT:
-			r = yystate6(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-		if (strcmp(nt, "line") == 0) {
-			r = yystate1(yysymbol_yylex());
-		} else if (strcmp(nt, "expr") == 0) {
-			r = yystate2(yysymbol_yylex());
-		} else if (strcmp(nt, "term") == 0) {
-			r = yystate3(yysymbol_yylex());
-		} else if (strcmp(nt, "factor") == 0) {
-			r = yystate4(yysymbol_yylex());
-		} else {
-			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
-			exit(EXIT_FAILURE);
-		}
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate0(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate1(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '$':
-			/* acc */
-			/* reduce line' -> line */
-			r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
-			break;
-		default:
-			if (token <= 0) { /* EOF */
-				/* acc */
-				/* reduce line' -> line */
-				r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
+	switch (state) {
+		case 0:
+			switch (token) {
+				case '(':
+					return yyaction_shift(5);
+				case DIGIT:
+					return yyaction_shift(6);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
 			}
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate1(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate2(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '\n':
-			r = yystate7(yysymbol_yylex());
-			break;
-		case '+':
-			r = yystate8(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate2(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate3(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '\n':
-			/* reduce expr -> term */
-			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
-			break;
-		case '+':
-			/* reduce expr -> term */
-			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
-			break;
-		case ')':
-			/* reduce expr -> term */
-			r = (struct yyparseresult) { .nt = "expr", .nret = 1 };
-			break;
-		case '*':
-			r = yystate9(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate3(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate4(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '\n':
-			/* reduce term -> factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
-			break;
-		case '+':
-			/* reduce term -> factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
-			break;
-		case ')':
-			/* reduce term -> factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
-			break;
-		case '*':
-			/* reduce term -> factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 1 };
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate4(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate5(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '(':
-			r = yystate5(yysymbol_yylex());
-			break;
-		case DIGIT:
-			r = yystate6(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-		if (strcmp(nt, "expr") == 0) {
-			r = yystate10(yysymbol_yylex());
-		} else if (strcmp(nt, "term") == 0) {
-			r = yystate3(yysymbol_yylex());
-		} else if (strcmp(nt, "factor") == 0) {
-			r = yystate4(yysymbol_yylex());
-		} else {
-			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
-			exit(EXIT_FAILURE);
-		}
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate5(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate6(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '\n':
-			/* reduce factor -> DIGIT */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
-			break;
-		case '+':
-			/* reduce factor -> DIGIT */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
-			break;
-		case ')':
-			/* reduce factor -> DIGIT */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
-			break;
-		case '*':
-			/* reduce factor -> DIGIT */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 1 };
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate6(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate7(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '$':
-			/* reduce line -> expr \n */
-			r = (struct yyparseresult) { .nt = "line", .nret = 2 };
-			break;
-		default:
-			if (token <= 0) { /* EOF */
-				/* acc */
-				/* reduce line' -> line */
-				r = (struct yyparseresult) { .nt = "line'", .nret = 1 };
+		case 1:
+			switch (token) {
+				default:
+					if (token <= 0) {
+						return yyaction_accept();
+					}
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
 			}
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
+		case 2:
+			switch (token) {
+				case '\n':
+					return yyaction_shift(7);
+				case '+':
+					return yyaction_shift(8);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 3:
+			switch (token) {
+				case '\n':
+					return yyaction_reduce("expr", 1); /* expr -> term */
+				case '+':
+					return yyaction_reduce("expr", 1); /* expr -> term */
+				case ')':
+					return yyaction_reduce("expr", 1); /* expr -> term */
+				case '*':
+					return yyaction_shift(9);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 4:
+			switch (token) {
+				case '\n':
+					return yyaction_reduce("term", 1); /* term -> factor */
+				case '+':
+					return yyaction_reduce("term", 1); /* term -> factor */
+				case ')':
+					return yyaction_reduce("term", 1); /* term -> factor */
+				case '*':
+					return yyaction_reduce("term", 1); /* term -> factor */
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 5:
+			switch (token) {
+				case '(':
+					return yyaction_shift(5);
+				case DIGIT:
+					return yyaction_shift(6);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 6:
+			switch (token) {
+				case '\n':
+					return yyaction_reduce("factor", 1); /* factor -> DIGIT */
+				case '+':
+					return yyaction_reduce("factor", 1); /* factor -> DIGIT */
+				case ')':
+					return yyaction_reduce("factor", 1); /* factor -> DIGIT */
+				case '*':
+					return yyaction_reduce("factor", 1); /* factor -> DIGIT */
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 7:
+			switch (token) {
+				default:
+					if (token <= 0) {
+						return yyaction_accept();
+					}
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 8:
+			switch (token) {
+				case '(':
+					return yyaction_shift(5);
+				case DIGIT:
+					return yyaction_shift(6);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 9:
+			switch (token) {
+				case '(':
+					return yyaction_shift(5);
+				case DIGIT:
+					return yyaction_shift(6);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 10:
+			switch (token) {
+				case ')':
+					return yyaction_shift(13);
+				case '+':
+					return yyaction_shift(8);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 11:
+			switch (token) {
+				case '\n':
+					return yyaction_reduce("expr", 3); /* expr -> expr + term */
+				case '+':
+					return yyaction_reduce("expr", 3); /* expr -> expr + term */
+				case ')':
+					return yyaction_reduce("expr", 3); /* expr -> expr + term */
+				case '*':
+					return yyaction_shift(9);
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 12:
+			switch (token) {
+				case '\n':
+					return yyaction_reduce("term", 3); /* term -> term * factor */
+				case '+':
+					return yyaction_reduce("term", 3); /* term -> term * factor */
+				case ')':
+					return yyaction_reduce("term", 3); /* term -> term * factor */
+				case '*':
+					return yyaction_reduce("term", 3); /* term -> term * factor */
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
+		case 13:
+			switch (token) {
+				case '\n':
+					return yyaction_reduce("factor", 3); /* factor -> ( expr ) */
+				case '+':
+					return yyaction_reduce("factor", 3); /* factor -> ( expr ) */
+				case ')':
+					return yyaction_reduce("factor", 3); /* factor -> ( expr ) */
+				case '*':
+					return yyaction_reduce("factor", 3); /* factor -> ( expr ) */
+				default:
+					fprintf(stderr, "invalid token %d in state %d\n", token, state);
+					exit(EXIT_FAILURE);
+			}
 	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate7(yysymbol_nt(r.nt));
+	assert(false); /* unknown state */
 }
 
-struct yyparseresult
-yystate8(struct yysymbol s)
+int
+yystgoto(int state, char *nt)
 {
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '(':
-			r = yystate5(yysymbol_yylex());
-			break;
-		case DIGIT:
-			r = yystate6(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
+	switch (state) {
+		case 0:
+			if (strcmp(nt, "line") == 0) {
+				return 1;
+			} else if (strcmp(nt, "expr") == 0) {
+				return 2;
+			} else if (strcmp(nt, "term") == 0) {
+				return 3;
+			} else if (strcmp(nt, "factor") == 0) {
+				return 4;
+			}
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-		if (strcmp(nt, "term") == 0) {
-			r = yystate11(yysymbol_yylex());
-		} else if (strcmp(nt, "factor") == 0) {
-			r = yystate4(yysymbol_yylex());
-		} else {
-			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
+		case 1:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate8(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate9(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '(':
-			r = yystate5(yysymbol_yylex());
-			break;
-		case DIGIT:
-			r = yystate6(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
+		case 2:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-		if (strcmp(nt, "factor") == 0) {
-			r = yystate12(yysymbol_yylex());
-		} else {
-			fprintf(stderr, "invalid nonterminal '%s'\n", nt);
+		case 3:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate9(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate10(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case ')':
-			r = yystate13(yysymbol_yylex());
-			break;
-		case '+':
-			r = yystate8(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
+		case 4:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate10(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate11(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '\n':
-			/* reduce expr -> expr + term */
-			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
-			break;
-		case '+':
-			/* reduce expr -> expr + term */
-			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
-			break;
-		case ')':
-			/* reduce expr -> expr + term */
-			r = (struct yyparseresult) { .nt = "expr", .nret = 3 };
-			break;
-		case '*':
-			r = yystate9(yysymbol_yylex());
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
+		case 5:
+			if (strcmp(nt, "expr") == 0) {
+				return 10;
+			} else if (strcmp(nt, "term") == 0) {
+				return 3;
+			} else if (strcmp(nt, "factor") == 0) {
+				return 4;
+			}
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate11(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate12(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '\n':
-			/* reduce term -> term * factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
-			break;
-		case '+':
-			/* reduce term -> term * factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
-			break;
-		case ')':
-			/* reduce term -> term * factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
-			break;
-		case '*':
-			/* reduce term -> term * factor */
-			r = (struct yyparseresult) { .nt = "term", .nret = 3 };
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
+		case 6:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
-	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate12(yysymbol_nt(r.nt));
-}
-
-struct yyparseresult
-yystate13(struct yysymbol s)
-{
-	struct yyparseresult r;
-	if (s.terminal) {
-		int token = s.u.token;
-		switch (token) {
-		case '\n':
-			/* reduce factor -> ( expr ) */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
-			break;
-		case '+':
-			/* reduce factor -> ( expr ) */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
-			break;
-		case ')':
-			/* reduce factor -> ( expr ) */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
-			break;
-		case '*':
-			/* reduce factor -> ( expr ) */
-			r = (struct yyparseresult) { .nt = "factor", .nret = 3 };
-			break;
-		default:
-			fprintf(stderr, "invalid token '%d' on line %d\n", token, __LINE__);
+		case 7:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
 			exit(EXIT_FAILURE);
-		}
-	} else {
-		char *nt = s.u.nt;
+		case 8:
+			if (strcmp(nt, "term") == 0) {
+				return 11;
+			} else if (strcmp(nt, "factor") == 0) {
+				return 4;
+			}
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
+			exit(EXIT_FAILURE);
+		case 9:
+			if (strcmp(nt, "factor") == 0) {
+				return 12;
+			}
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
+			exit(EXIT_FAILURE);
+		case 10:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
+			exit(EXIT_FAILURE);
+		case 11:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
+			exit(EXIT_FAILURE);
+		case 12:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
+			exit(EXIT_FAILURE);
+		case 13:
+			fprintf(stderr, "invalid reduction '%s' in state %d\n", nt, state);
+			exit(EXIT_FAILURE);
 	}
-	/* pop stack until no more returns and then recurse on the state
-	 * where we land */
-	if (r.nret > 0) {
-		return (struct yyparseresult) {
-			.nt = r.nt, .nret = r.nret - 1,
-		};
-	}
-	return yystate13(yysymbol_nt(r.nt));
+	assert(false); /* unknown state */
 }
 
 int
 yyparse()
 {
-	struct yyparseresult r = yystate0(yysymbol_yylex());
-	if (r.nret != 0 || strcmp(r.nt, "line'") != 0) {
-		fprintf(stderr, "unable to parse");
-		return 1;
+	YYStack *states = yystack_create(0);
+	int token = yylex();
+	while (1) {
+		YYAction act = yystaction(states->val, token);
+		switch (act.type) {
+			case YYACTION_SHIFT:
+				yystack_push(states, act.u.state);
+				token = yylex();
+			case YYACTION_REDUCE:
+				yystack_popn(states, act.u.r.len);
+				yystack_push(states, yystgoto(states->val, act.u.r.nt));
+			case YYACTION_ACCEPT:
+				yystack_destroy(states);
+				return 0;
+		}
 	}
-	return 0;
 }
-
 
 int
 yylex()

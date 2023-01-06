@@ -41,6 +41,12 @@ main()
 "		return DIGIT;\n"
 "	}\n"
 "	return c;\n"
+"}\n"
+"\n"
+"int\n"
+"main()\n"
+"{\n"
+"	return yyparse();\n"
 "}\n");
 	gen(stdout, P);
 	parser_destroy(P);
