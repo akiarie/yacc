@@ -1,9 +1,29 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "grammar.h"
 #include "parser.h"
 #include "gen.h"
 #include "util.h"
+
+#define EXAMPLE_FILE "gen_test_gen.c"
+
+/* read_file: reads contents of file and returns them
+ * caller must free returned string
+ * see https://stackoverflow.com/a/14002993 */
+char *
+read_file(char *path)
+{
+	FILE *f = fopen(path, "rb");
+	fseek(f, 0, SEEK_END);
+	long fsize = ftell(f);
+	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
+	char *str = malloc(fsize + 1);
+	fread(str, fsize, 1, f);
+	fclose(f);
+	str[fsize] = '\0';
+	return str;
+}
 
 int
 main()
@@ -42,7 +62,20 @@ main()
 "	}\n"
 "	return c;\n"
 "}\n");
-	gen(stdout, P);
+
+	char *buf = NULL;
+	size_t buflen = 0;
+	FILE *stream = open_memstream(&buf, &buflen);
+	gen(stream, P);
+	fclose(stream);
+	char *expected = read_file(EXAMPLE_FILE);
+	if (strcmp(buf, expected) != 0) {
+		fprintf(stderr, "generated file does not match expected\n");
+		exit(1);
+	}
+	free(expected);
+	free(buf);
+
 	parser_destroy(P);
 	grammar_destroy(G);
 	grammar_destroy(GG);
