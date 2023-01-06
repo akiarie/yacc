@@ -11,3 +11,4 @@ lex
 main.c
 a.out
 table.txt
+yaccgen
