@@ -1,5 +1,9 @@
 %{
 #include <stdio.h>
+#include <ctype.h>
+
+int
+yylex();
 %}
 
 %token DIGIT

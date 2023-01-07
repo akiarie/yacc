@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "grammar.h"
 #include "parser.h"
@@ -156,22 +157,44 @@ genreduce(struct lrprodset prods, int k)
 	return strbuilder_build(b);
 }
 
+struct numparse {
+	int num;
+	size_t len;
+};
+
+struct numparse
+parsenum(char *s)
+{
+	char *t;
+	for (t = s; isdigit(*t); t++) {}
+	size_t len = t - s + 1;
+	char *u = malloc(sizeof(char) * len);
+	snprintf(u, len, "%s", s);
+	int num = atoi(u);
+	free(u);
+	return (struct numparse) {num, t - s};
+}
+
 char *
 translateact(char *s, size_t len)
 {
 	struct strbuilder *b = strbuilder_create();
-	for (; *s; s++) {
+	struct numparse np;
+	while (*s) {
 		if (*s != '$') {
-			strbuilder_putc(b, *s);
+			strbuilder_putc(b, *s++);
 			continue;
 		}
 		switch (*++s) {
 		case '$':
 			strbuilder_printf(b, "%s", YY_REDUCE_VAL);
+			s++;
 			continue;
 		default:
 			assert('0' <= *s && *s <= '9');
-			strbuilder_printf(b, "yystack_1n(values, %d)", (len + 1) - (*s - '0'));
+			np = parsenum(s);
+			s += np.len;
+			strbuilder_printf(b, "yystack_1n(values, %d)", (len + 1) - (np.num));
 		}
 	}
 	return strbuilder_build(b);
@@ -208,9 +231,8 @@ genvalues(char *action, char *prefix, size_t len)
 char *
 genaction(Action *act, struct lrprodset prods, char *prefix)
 {
-	char *vals;
 	struct strbuilder *b = strbuilder_create();
-	char *reduce;
+	char *reduce, *vals;
 	size_t len;
 	switch (act->type) {
 	case ACTION_SHIFT:
@@ -402,7 +424,7 @@ gen(FILE *out, Parser P)
 "	int token = yylex();\n"
 "	YYStack *values = yystack_create(yylval);\n"
 "	YYStack *states = yystack_create(0);\n"
-"	while (1) {\n");
+"	while (true) {\n");
 	fprintf(out,
 "		YYAction act = %s(yystack_top(states), token, values);\n",
 		YY_STATE_ACTION);
@@ -421,6 +443,7 @@ gen(FILE *out, Parser P)
 	fprintf(out,
 "		case YYACTION_ACCEPT:\n"
 "			yystack_destroy(states);\n"
+"			yystack_destroy(values);\n"
 "			return 0;\n"
 "		}\n"
 "		assert(false); /* invalid action type */\n"

@@ -456,7 +456,7 @@ yyparse()
 	int token = yylex();
 	YYStack *values = yystack_create(yylval);
 	YYStack *states = yystack_create(0);
-	while (1) {
+	while (true) {
 		YYAction act = yystaction(yystack_top(states), token, values);
 		switch (act.type) {
 		case YYACTION_SHIFT:
@@ -470,6 +470,7 @@ yyparse()
 			continue;
 		case YYACTION_ACCEPT:
 			yystack_destroy(states);
+			yystack_destroy(values);
 			return 0;
 		}
 		assert(false); /* invalid action type */

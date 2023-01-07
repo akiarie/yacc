@@ -12,3 +12,4 @@ main.c
 a.out
 table.txt
 yaccgen
+*.output
