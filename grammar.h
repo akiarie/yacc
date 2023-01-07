@@ -20,7 +20,10 @@ typedef struct symbolset {
 } Prod;
 
 Prod *
-prod_create();
+prod_epsilon();
+
+Prod *
+prod_create(char *action);
 
 void
 prod_destroy(Prod *p);

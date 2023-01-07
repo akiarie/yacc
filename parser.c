@@ -126,7 +126,7 @@ grammar_prods(Grammar *G)
 static Symbolset *
 getterminals(Grammar *G)
 {
-	Symbolset *set = prod_create(NULL);
+	Symbolset *set = prod_epsilon();
 	for (int i = 0; i < G->map->n; i++) {
 		Nonterminal *X = (Nonterminal *) G->map->entry[i].value;
 		for (int j = 0; j < X->n; j++) {

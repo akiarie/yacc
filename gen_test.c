@@ -34,15 +34,15 @@ main()
 	));
 	map_set(G->map, "expr", nonterminal_inline(
 		prod_inline("$$ = $1 + $3;", "expr", "+", "term"),
-		prod_inline(NULL, "term")
+		prod_inline("", "term")
 	));
 	map_set(G->map, "term", nonterminal_inline(
 		prod_inline("$$ = $1 * $3;", "term", "*", "factor"),
-		prod_inline(NULL, "factor")
+		prod_inline("", "factor")
 	));
 	map_set(G->map, "factor", nonterminal_inline(
 		prod_inline("$$ = $2;", "(", "expr", ")"),
-		prod_inline(NULL, "DIGIT")
+		prod_inline("", "DIGIT")
 	));
 	Grammar *GG = grammar_augment(G);
 	Parser P = parser_create(GG, 

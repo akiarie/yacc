@@ -26,6 +26,7 @@ isliteral(char *sym)
 Prod *
 prod_create(char *action)
 {
+	assert(action != NULL);
 	Prod *p = (Prod *) calloc(1, sizeof(Prod));
 	p->action = action;
 	return p;
@@ -69,10 +70,10 @@ prod_eq(Prod *p, Prod *q)
 	return true;
 }
 
-static Prod *
+Prod *
 prod_epsilon()
 {
-	return prod_create(NULL);
+	return prod_create("");
 }
 
 bool
@@ -108,7 +109,7 @@ Prod *
 prod_subrange(const Prod *p, unsigned int start, unsigned int end)
 {
 	assert(start <= p->n && end <= p->n);
-	Prod *q = prod_create(NULL);
+	Prod *q = prod_epsilon();
 	for (int i = start; i < end; i++) {
 		prod_append(q, p->sym[i]);
 	}
@@ -589,7 +590,7 @@ symbolset_includerange(Symbolset *p, Symbolset *q)
 Symbolset *
 symbolset_create_act(char *s, ...)
 {
-	Symbolset *set = prod_create(NULL);
+	Symbolset *set = prod_epsilon();
 	va_list ap;
 	va_start(ap, s);
 	for (char *sym = s; sym; sym = va_arg(ap, char *)) {
@@ -602,7 +603,7 @@ symbolset_create_act(char *s, ...)
 Symbolset *
 grammar_first(const Grammar *G, char *sym)
 {
-	Symbolset *set = prod_create(NULL);
+	Symbolset *set = prod_epsilon();
 	Nonterminal *X = map_get(G->map, sym);
 	if (X == NULL) { /* X terminal */
 		symbolset_include(set, sym);
@@ -625,7 +626,7 @@ grammar_first(const Grammar *G, char *sym)
 static Symbolset *
 symbolset_without(Symbolset *set, char *sym)
 {
-	Symbolset *setwo = prod_create(NULL);
+	Symbolset *setwo = prod_epsilon();
 	for (int i = 0; i < set->n; i++) {
 		if (strcmp(set->sym[i], sym) != 0) {
 			prod_append(setwo, set->sym[i]);
@@ -637,7 +638,7 @@ symbolset_without(Symbolset *set, char *sym)
 Symbolset *
 grammar_symbolsetfirst(const Grammar *G, Symbolset *set)
 {
-	Symbolset *first = prod_create(NULL);
+	Symbolset *first = prod_epsilon();
 	for (int i = 0; i < set->n; i++) {
 		Symbolset *next = grammar_first(G, set->sym[i]);
 		symbolset_includerange(first, symbolset_without(next,
@@ -660,7 +661,7 @@ prod_head(Prod *p)
 static Symbolset *
 symbolset_firstafter(const Grammar *G, Symbolset *set, char *sym)
 {
-	Symbolset *after = prod_create(NULL);
+	Symbolset *after = prod_epsilon();
 	int k = 0;
 	while ((k = symbolset_getindex(set, sym)) >= 0) {
 		set = prod_subrange(set, k + 1, set->n);
@@ -701,7 +702,7 @@ grammar_follow_act(const Grammar *G, char *sym, struct circuitbreaker *tr);
 static Symbolset *
 symbolset_prodfollow(const Grammar *G, char *sym, Prod *p)
 {
-	Symbolset *set = prod_create(NULL);
+	Symbolset *set = prod_epsilon();
 	Symbolset *fstafter = symbolset_firstafter(G, p, sym);
 	symbolset_includerange(set, symbolset_without(fstafter, SYMBOL_EPSILON));
 	return set;
@@ -711,7 +712,7 @@ static Symbolset *
 symbolset_computefollow(const Grammar *G, char *sym, char *symX,
 		struct circuitbreaker *tr)
 {
-	Symbolset *set = prod_create(NULL);
+	Symbolset *set = prod_epsilon();
 	Nonterminal *X = map_get(G->map, symX);
 	assert(X != NULL);
 	/* 2. */
@@ -730,7 +731,7 @@ symbolset_computefollow(const Grammar *G, char *sym, char *symX,
 static Symbolset *
 grammar_follow_act(const Grammar *G, char *sym, struct circuitbreaker *tr)
 {
-	Symbolset *set = prod_create(NULL);
+	Symbolset *set = prod_epsilon();
 	/* 1. */
 	if (strcmp(G->S, sym) == 0) {
 		symbolset_include(set, SYMBOL_EOF);
@@ -760,7 +761,7 @@ grammar_sym_LL1cond12(const Grammar *G, char *sym)
 {
 	Nonterminal *X = map_get(G->map, sym);
 	assert(X != NULL);
-	Symbolset *enc = prod_create(NULL); /* symbols already encountered */
+	Symbolset *enc = prod_epsilon(); /* symbols already encountered */
 	for (int i = 0; i < X->n; i++) {
 		Prod *p = X->prod[i];
 		Symbolset *first = grammar_symbolsetfirst(G, (Symbolset *) p);

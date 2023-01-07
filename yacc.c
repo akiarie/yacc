@@ -19,14 +19,14 @@ main()
 	 */
 	Grammar *G = grammar_create("spec");
 	map_set(G->map, "spec", nonterminal_inline(
-		prod_inline("defs", "MARK", "rules", "tail")
+		prod_inline(NULL, "defs", "MARK", "rules", "tail")
 	));
 	map_set(G->map, "tail", nonterminal_inline(
 		prod_inline(NULL, "MARK"),
-		prod_create() /* ε */
+		prod_epsilon() /* ε */
 	));
 	map_set(G->map, "defs", nonterminal_inline(
-		prod_create(), /* ε */
+		prod_epsilon(), /* ε */
 		prod_inline("defs", "def")
 	));
 	map_set(G->map, "def", nonterminal_inline(
@@ -43,7 +43,7 @@ main()
 		prod_inline(NULL, "TYPE")
 	));
 	map_set(G->map, "tag", nonterminal_inline(
-		prod_create(), /* ε */
+		prod_epsilon(), /* ε */
 		prod_inline(NULL, "<", "IDENTIFIER", ">")
 	));
 	map_set(G->map, "nlist", nonterminal_inline(
@@ -64,7 +64,7 @@ main()
 		prod_inline(NULL, "|", "rbody", "prec")
 	));
 	map_set(G->map, "rbody", nonterminal_inline(
-		prod_create(), /* ε */
+		prod_epsilon(), /* ε */
 		prod_inline(NULL, "rbody", "IDENTIFIER"),
 		prod_inline(NULL, "rbody", "act")
 	));
@@ -72,7 +72,7 @@ main()
 		prod_inline(NULL, "{", "}")
 	));
 	map_set(G->map, "prec", nonterminal_inline(
-		prod_create(), /* ε */
+		prod_epsilon(), /* ε */
 		prod_inline(NULL, "PREC", "IDENTIFIER"),
 		prod_inline(NULL, "PREC", "IDENTIFIER", "act"),
 		prod_inline(NULL, "prec", ";")

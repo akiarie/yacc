@@ -154,7 +154,7 @@ nonterminal_parseprod(Nonterminal *X, Token *start)
 			tktype_str(tk->type));
 		exit(EXIT_FAILURE);
 	}
-	Prod *p = prod_create(NULL);
+	Prod *p = prod_epsilon();
 	for (; tk->type == TOKEN_SYMBOL; tk++) {
 		if (strcmp(tk->value, SYMBOL_EPSILON) == 0) {
 			/* ε must be alone */

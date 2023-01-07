@@ -142,7 +142,8 @@ yystaction(int state, int token, YYStack *values)
 		switch (token) {
 		default:
 			if (token <= 0) {
-				val = yystack_1n(values, 1);
+				/* action  */
+				val = yystack_1n(values, 1); 
 				return yyaction_accept();
 			}
 			fprintf(stderr, "invalid token %d in state %d\n", token, state);
@@ -161,17 +162,20 @@ yystaction(int state, int token, YYStack *values)
 	case 3:
 		switch (token) {
 		case '\n':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("expr", 1); /* expr -> term */
 		case '+':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("expr", 1); /* expr -> term */
 		case ')':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("expr", 1); /* expr -> term */
@@ -184,22 +188,26 @@ yystaction(int state, int token, YYStack *values)
 	case 4:
 		switch (token) {
 		case '\n':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("term", 1); /* term -> factor */
 		case '+':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("term", 1); /* term -> factor */
 		case ')':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("term", 1); /* term -> factor */
 		case '*':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("term", 1); /* term -> factor */
@@ -220,22 +228,26 @@ yystaction(int state, int token, YYStack *values)
 	case 6:
 		switch (token) {
 		case '\n':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("factor", 1); /* factor -> DIGIT */
 		case '+':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("factor", 1); /* factor -> DIGIT */
 		case ')':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("factor", 1); /* factor -> DIGIT */
 		case '*':
-			val = yystack_1n(values, 1);
+			/* action  */
+			val = yystack_1n(values, 1); 
 			yystack_popn(values, 1);
 			yystack_push(values, val);
 			return yyaction_reduce("factor", 1); /* factor -> DIGIT */
