@@ -5,13 +5,11 @@ OBJECTS = util.o table.o grammar.o parser.o gen.o
 
 GRAMMAR_INC = grammar_parse.c grammar_util.c grammar_lr.c
 
-yacc: main.c
-	@printf '\CC\t$@\n'
-	@$(CC) -o $@ -ly -ll $<
+MAIN = main.c main.h
 
-main.c: yaccgen
-	@printf '\GEN\t$@\n'
-	@./$< > $@
+main: yaccgen
+	@printf 'GEN\t%s\n' "$(MAIN)"
+	@./$< $(MAIN)
 
 yaccgen: yacc.c $(HEADERS) $(OBJECTS)
 	@printf '\CC\t$@\n'

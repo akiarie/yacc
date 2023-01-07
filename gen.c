@@ -214,11 +214,12 @@ genactwithdef(char *action)
 char *
 genvalues(char *action, char *prefix, size_t len)
 {
+	assert(action);
 	struct strbuilder *b = strbuilder_create();
 	char *actwdef = genactwithdef(action);
 	char *s = translateact(actwdef, len);
 	free(actwdef);
-	if (action) {
+	if (strlen(action) > 0) {
 		strbuilder_printf(b,
 "%s/* action %s */\n", prefix, action);
 	}
@@ -357,9 +358,6 @@ genstategoto(FILE *out, Parser P, int state, char *prefix)
 void
 gentable(FILE *out, Parser P)
 {
-	gentokens(out, P.yyterms);
-	fprintf(out,
-"\n");
 	gentabletypes(out);
 	fprintf(out, 
 "\n"
@@ -401,8 +399,15 @@ gentable(FILE *out, Parser P)
 }
 
 void
+gen_headers(FILE *out, Parser P)
+{
+	gentokens(out, P.yyterms);
+}
+
+void
 gen(FILE *out, Parser P)
 {
+	gen_headers(out, P);
 	fprintf(out, "%s", P.precode);
 	fprintf(out,
 "\n"

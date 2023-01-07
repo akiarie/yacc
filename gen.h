@@ -6,6 +6,9 @@
 #define YY_REDUCE_VAL "val"
 
 void
+gen_headers(FILE *, Parser);
+
+void
 gen(FILE *, Parser);
 
 #endif
