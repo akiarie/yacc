@@ -30,7 +30,7 @@ main()
 {
 	Grammar *G = grammar_create("line");
 	map_set(G->map, "line", nonterminal_inline(
-		prod_inline("printf(\"%%d\\n\", $1);", "expr", "\\n")
+		prod_inline("printf(\"%d\\n\", $1);", "expr", "\\n")
 	));
 	map_set(G->map, "expr", nonterminal_inline(
 		prod_inline("$$ = $1 + $3;", "expr", "+", "term"),

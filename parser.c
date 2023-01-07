@@ -43,9 +43,11 @@ action_create(enum actiontype type)
 }
 
 Action *
-action_accept()
+action_accept(int prod)
 {
-	return action_create(ACTION_ACCEPT);
+	Action *act = action_create(ACTION_ACCEPT);
+	act->u = (union actunion) { .prod = prod };
+	return act;
 }
 
 Action *
@@ -74,7 +76,7 @@ static Action *
 reduceacc(Parser *P, Item item)
 {
 	if (strcmp(item.sym, P->S) == 0) {
-		return action_accept();
+		return action_accept(parser_mustgetprod(*P, item.p));
 	} 
 	return action_reduce(parser_mustgetprod(*P, item.p));
 }

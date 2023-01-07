@@ -157,7 +157,7 @@ genreduce(struct lrprodset prods, int k)
 }
 
 char *
-translateact(char *s)
+translateact(char *s, size_t len)
 {
 	struct strbuilder *b = strbuilder_create();
 	for (; *s; s++) {
@@ -171,23 +171,36 @@ translateact(char *s)
 			continue;
 		default:
 			assert('0' <= *s && *s <= '9');
-			strbuilder_printf(b, "yystack_1n(values, %c)", *s);
+			strbuilder_printf(b, "yystack_1n(values, %d)", (len + 1) - (*s - '0'));
 		}
 	}
 	return strbuilder_build(b);
 }
 
 char *
-genvalues(char *action, char *prefix)
+genactwithdef(char *action)
 {
 	struct strbuilder *b = strbuilder_create();
-	if (!action) {
-		action = "$$ = $1;";
+	strbuilder_printf(b, "$$ = $1;");
+	if (action) {
+		strbuilder_printf(b, " %s", action);
 	}
-	char *s = translateact(action);
+	return strbuilder_build(b);
+}
+
+char *
+genvalues(char *action, char *prefix, size_t len)
+{
+	struct strbuilder *b = strbuilder_create();
+	char *actwdef = genactwithdef(action);
+	char *s = translateact(actwdef, len);
+	free(actwdef);
+	if (action) {
+		strbuilder_printf(b,
+"%s/* action %s */\n", prefix, action);
+	}
 	strbuilder_printf(b,
-"%s/* action %s */\n"
-"%s%s\n", prefix, action, prefix, s);
+"%s%s\n", prefix, s);
 	free(s);
 	return strbuilder_build(b);
 }
@@ -198,17 +211,19 @@ genaction(Action *act, struct lrprodset prods, char *prefix)
 	char *vals;
 	struct strbuilder *b = strbuilder_create();
 	char *reduce;
+	size_t len;
 	switch (act->type) {
 	case ACTION_SHIFT:
 		strbuilder_printf(b, 
 "%sreturn yyaction_shift(%d);\n", prefix, act->u.state);
 		break;
 	case ACTION_REDUCE:
-		vals = genvalues(prods.prod[act->u.prod]->action, prefix);
+		len = prods.prod[act->u.prod]->n;
+		vals = genvalues(prods.prod[act->u.prod]->action, prefix, len);
 		strbuilder_printf(b, "%s", vals);
 		free(vals);
 		strbuilder_printf(b, 
-"%syystack_popn(values, %lu);\n", prefix, prods.prod[act->u.prod]->n);
+"%syystack_popn(values, %lu);\n", prefix, len);
 		strbuilder_printf(b, 
 "%syystack_push(values, val);\n", prefix);
 		reduce = genreduce(prods, act->u.prod);
@@ -217,7 +232,8 @@ genaction(Action *act, struct lrprodset prods, char *prefix)
 		free(reduce);
 		break;
 	case ACTION_ACCEPT:
-		vals = genvalues(prods.prod[act->u.prod]->action, prefix);
+		len = prods.prod[act->u.prod]->n;
+		vals = genvalues(prods.prod[act->u.prod]->action, prefix, len);
 		strbuilder_printf(b, "%s", vals);
 		free(vals);
 		strbuilder_printf(b, 
@@ -233,13 +249,13 @@ genaction(Action *act, struct lrprodset prods, char *prefix)
 void
 genstateaction(FILE *out, Parser P, int state, char *prefix)
 {
-	bool eof = false;
+	char *eofkey = NULL;
 	fprintf(out,
 "%sswitch (token) {\n", prefix);
 	for (int i = 0; i < P.action[state]->n; i++) {
 		struct entry e = P.action[state]->entry[i];
 		if (strcmp(e.key, SYMBOL_EOF) == 0) {
-			eof = true;
+			eofkey = e.key;
 			continue;
 		}
 		/* only output cases for (non-accepting) literals and yyterms */
@@ -265,14 +281,15 @@ genstateaction(FILE *out, Parser P, int state, char *prefix)
 	}
 	fprintf(out,
 "%sdefault:\n", prefix);
-	if (eof) {
+	if (eofkey) {
 		fprintf(out,
 "%s	if (token <= 0) {\n", prefix);
 		struct strbuilder *b = strbuilder_create();
 		strbuilder_printf(b,
 "%s		", prefix);
 		char *subprefix = strbuilder_build(b);
-		char *action = genaction(action_accept(), P.prods, subprefix);
+		char *action = genaction(map_get(P.action[state], eofkey),
+			P.prods, subprefix);
 		free(subprefix);
 		fprintf(out, "%s", action);
 		fprintf(out,

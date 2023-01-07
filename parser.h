@@ -17,7 +17,7 @@ typedef struct {
 } Action;
 
 Action *
-action_accept();
+action_accept(int prod);
 
 Action *
 action_shift(int st);
