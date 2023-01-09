@@ -70,6 +70,8 @@ genfiles(FILE *codefile, FILE *headerfile)
 	));
 	Grammar *GG = grammar_augment(G);
 	Parser P = parser_create(GG,
+"#include \"lex.h\"\n"
+"\n"
 "int yylval;\n",
 "");
 	gen(codefile, P);
