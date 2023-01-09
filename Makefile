@@ -35,6 +35,10 @@ gen.o: gen.h gen.c
 	@printf '\CC\t$@\n'
 	@$(CC) -c gen.c
 
+lex.o: lex.c main.h
+	@printf '\CC\t$@\n'
+	@$(CC) -c lex.c
+
 grammar_test: grammar_test.c $(HEADERS) $(OBJECTS)
 	@printf '\CC\t$@\n'
 	@$(CC) -o $@ grammar_test.c $(OBJECTS)
@@ -43,7 +47,11 @@ gen_test: gen_test.c $(HEADERS) $(OBJECTS)
 	@printf '\CC\t$@\n'
 	@$(CC) -o $@ gen_test.c $(OBJECTS)
 
-check: grammar_test gen_test
+lex_test: lex_test.c lex.o
+	@printf '\CC\t$@\n'
+	@$(CC) -o $@ $^
+
+check: grammar_test gen_test lex_test
 	@./run-tests.sh
 
 clean-tests:
