@@ -78,7 +78,6 @@ genfiles(FILE *codefile, FILE *headerfile)
 	parser_destroy(P);
 	grammar_destroy(GG);
 	grammar_destroy(G);
-
 }
 
 int
