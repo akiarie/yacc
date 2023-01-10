@@ -4,7 +4,6 @@
 *.tab.c
 *.tab.h
 *.o
-lex
 *_test
 *.gch
 *.dSYM
@@ -12,4 +11,7 @@ main.c
 a.out
 table.txt
 yaccgen
+yacc.c
+yacc.h
+yacc
 *.output

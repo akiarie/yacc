@@ -5,7 +5,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "main.h"
+#include "yacc.h"
 #include "lex.h"
 
 static char *tokstr[] = {

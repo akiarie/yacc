@@ -4,6 +4,8 @@
 #define TK_EOF 0
 #define TK_ERROR -1
 
+int yylval;
+
 int
 yylex();
 

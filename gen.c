@@ -401,14 +401,26 @@ gentable(FILE *out, Parser P)
 void
 gen_headers(FILE *out, Parser P)
 {
+	fprintf(out,
+"#ifndef YY_TOKENS\n"
+"#define YY_TOKENS\n"
+"\n"
+"int\n"
+"yyparse();\n"
+"\n");
 	gentokens(out, P.yyterms);
+	fprintf(out,
+"\n"
+"#endif\n");
 }
 
 void
 gen(FILE *out, Parser P)
 {
 	gen_headers(out, P);
-	fprintf(out, "%s", P.precode);
+	fprintf(out,
+"\n"
+"%s", P.precode);
 	fprintf(out,
 "\n"
 "#include <stdio.h>\n"

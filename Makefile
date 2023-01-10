@@ -5,15 +5,23 @@ OBJECTS = util.o table.o grammar.o parser.o gen.o
 
 GRAMMAR_INC = grammar_parse.c grammar_util.c grammar_lr.c
 
-MAIN = main.c main.h
+YACCGEN = yacc.c yacc.h
 
-main: yaccgen
-	@printf 'GEN\t%s\n' "$(MAIN)"
-	@./$< $(MAIN)
-
-yaccgen: yacc.c $(HEADERS) $(OBJECTS)
+yacc: yacc.o lex.o
 	@printf '\CC\t$@\n'
-	@$(CC) -o $@ yacc.c $(OBJECTS)
+	@$(CC) -o $@ main.c yacc.o lex.o
+
+yacc.o: $(YACCGEN)
+	@printf '\CC\t$@\n'
+	@$(CC) -c yacc.c
+
+$(YACCGEN): yaccgen
+	@printf 'GEN\t%s\n' "$(YACCGEN)"
+	@./$^ $(YACCGEN)
+
+yaccgen: yaccgen.c $(HEADERS) $(OBJECTS)
+	@printf '\CC\t$@\n'
+	@$(CC) -o $@ yaccgen.c $(OBJECTS)
 
 util.o: util.h util.c
 	@printf '\CC\t$@\n'
@@ -35,7 +43,7 @@ gen.o: gen.h gen.c
 	@printf '\CC\t$@\n'
 	@$(CC) -c gen.c
 
-lex.o: lex.c main.h
+lex.o: lex.c yacc.h
 	@printf '\CC\t$@\n'
 	@$(CC) -c lex.c
 
@@ -58,7 +66,7 @@ clean-tests:
 	@rm -f *_test
 
 clean: clean-tests
-	@rm -f $(OBJECTS) *.gch a.out main.c yaccgen yacc
+	@rm -f $(OBJECTS) *.gch a.out yacc.o $(YACCGEN) yaccgen yacc
 	@rm -rf *.dSYM
 
 .PHONY: clean clean-tests
