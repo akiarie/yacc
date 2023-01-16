@@ -73,6 +73,9 @@ genfiles(FILE *codefile, FILE *headerfile)
 "#include \"lex.h\"\n"
 "\n",
 "");
+	Symbolset *order = symbolset_create("MARK", "START", "TOKEN", "UNION",
+		"LCURL", "RCURL", "defs");
+	printf("%s\n", parser_str_ordered(P, order));
 	gen(codefile, P);
 	gen_headers(headerfile, P);
 	parser_destroy(P);

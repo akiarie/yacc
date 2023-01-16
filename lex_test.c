@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "main.h"
+#include "yacc.h"
 #include "lex.h"
 
 #define EXAMPLE_FILE "examples/calc.y"

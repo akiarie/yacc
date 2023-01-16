@@ -8,10 +8,11 @@
 #include "util.h"
 
 static int
-parser_mustgetprod(Parser P, Prod *p)
+parser_mustgetprod(Parser P, char *sym, Prod *p)
 {
 	for (int i = 0; i < P.prods.n; i++) {
-		if (prod_eq(P.prods.prod[i], p)) {
+		if (strcmp(P.prods.sym[i], sym) == 0 &&
+				prod_eq(P.prods.prod[i], p)) {
 			return i;
 		}
 	}
@@ -72,13 +73,28 @@ action_destroy(Action *act)
 	free(act);
 }
 
+static char *
+action_str(Action *act)
+{
+	struct strbuilder *b = strbuilder_create();
+	switch (act->type) {
+	case ACTION_ACCEPT:
+		strbuilder_printf(b, "{ accept }");
+	case ACTION_SHIFT:
+		strbuilder_printf(b, "{ shift %d }", act->u.state);
+	case ACTION_REDUCE:
+		strbuilder_printf(b, "{ reduce %d }", act->u.prod);
+	}
+	return strbuilder_build(b);
+}
+
 static Action *
 reduceacc(Parser *P, Item item)
 {
 	if (strcmp(item.sym, P->S) == 0) {
-		return action_accept(parser_mustgetprod(*P, item.p));
+		return action_accept(parser_mustgetprod(*P, item.sym, item.p));
 	} 
-	return action_reduce(parser_mustgetprod(*P, item.p));
+	return action_reduce(parser_mustgetprod(*P, item.sym, item.p));
 }
 
 static void
@@ -88,14 +104,24 @@ stateshifts(Parser *P, Grammar *G, int st)
 	struct map *action = P->action[st];
 	for (int i = 0; i < I.n; i++) {
 		char *nextsym = item_nextsym(I.item[i]);
+		if (I.item[i].p->n > 0) {
+			printf("%d: [%d] of %lu: %s\n", st, i, I.n, 
+				item_str(I.item[i], G));
+		} else {
+			printf("%d: [%d] of %lu: %s -> <e>\n", st, i, I.n,
+				I.item[i].sym);
+		}
+		/* set actions for given symbol only once */
 		if (map_get(action, nextsym) != NULL) {
 			continue;
 		}
 		if (strcmp(nextsym, SYMBOL_EPSILON) == 0) {
+			Action *act = reduceacc(P, I.item[i]);
 			Symbolset *fllw = grammar_follow(G, I.item[i].sym);
+			printf("follow: %s\naction: %s\n", prod_str(fllw, G),
+				action_str(act));
 			for (int j = 0; j < fllw->n; j++) {
-				Action *act = reduceacc(P, I.item[i]);
-				map_set(action, fllw->sym[j], act);
+				/*map_set(action, fllw->sym[j], act);*/
 			}
 			continue;
 		}

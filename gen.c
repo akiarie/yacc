@@ -70,14 +70,13 @@ gentabletypes(FILE *out)
 "	stack->val[index] = val;\n"
 "}\n"
 "\n"
-"int\n"
+"void\n"
 "yystack_popn(YYStack *stack, int n)\n"
 "{\n"
-"	assert(0 < n && n < stack->len);\n"
+"	assert(n < stack->len);\n"
 "	for (int i = 0; i < n; i++) {\n"
 "		stack->len--;\n"
 "	}\n"
-"	return stack->val[stack->len]; /* i.e. the last item popped */\n"
 "}\n"
 "\n"
 "int\n"
@@ -194,6 +193,7 @@ translateact(char *s, size_t len)
 			assert('0' <= *s && *s <= '9');
 			np = parsenum(s);
 			s += np.len;
+			assert((len + 1) > np.num);
 			strbuilder_printf(b, "yystack_1n(values, %d)", (len + 1) - (np.num));
 		}
 	}
@@ -214,13 +214,13 @@ genactwithdef(char *action)
 char *
 genvalues(char *action, char *prefix, size_t len)
 {
-	assert(action);
+	assert(action && len > 0);
 	struct strbuilder *b = strbuilder_create();
 	char *actwdef = genactwithdef(action);
 	char *s = translateact(actwdef, len);
 	free(actwdef);
 	if (strlen(action) > 0) {
-		strbuilder_printf(b,
+	strbuilder_printf(b,
 "%s/* action %s */\n", prefix, action);
 	}
 	strbuilder_printf(b,
@@ -241,24 +241,26 @@ genaction(Action *act, struct lrprodset prods, char *prefix)
 "%sreturn yyaction_shift(%d);\n", prefix, act->u.state);
 		break;
 	case ACTION_REDUCE:
-		len = prods.prod[act->u.prod]->n;
-		vals = genvalues(prods.prod[act->u.prod]->action, prefix, len);
-		strbuilder_printf(b, "%s", vals);
-		free(vals);
-		strbuilder_printf(b, 
-"%syystack_popn(values, %lu);\n", prefix, len);
-		strbuilder_printf(b, 
-"%syystack_push(values, val);\n", prefix);
+		if ((len = prods.prod[act->u.prod]->n)) {
+			vals = genvalues(prods.prod[act->u.prod]->action, prefix, len);
+			strbuilder_printf(b, "%s", vals);
+			free(vals);
+			strbuilder_printf(b, 
+	"%syystack_popn(values, %lu);\n", prefix, len);
+			strbuilder_printf(b, 
+	"%syystack_push(values, val);\n", prefix);
+		}
 		reduce = genreduce(prods, act->u.prod);
 		strbuilder_printf(b, 
 "%sreturn %s\n", prefix, reduce);
 		free(reduce);
 		break;
 	case ACTION_ACCEPT:
-		len = prods.prod[act->u.prod]->n;
-		vals = genvalues(prods.prod[act->u.prod]->action, prefix, len);
-		strbuilder_printf(b, "%s", vals);
-		free(vals);
+		if ((len = prods.prod[act->u.prod]->n)) {
+			vals = genvalues(prods.prod[act->u.prod]->action, prefix, len);
+			strbuilder_printf(b, "%s", vals);
+			free(vals);
+		}
 		strbuilder_printf(b, 
 "%sreturn yyaction_accept();\n", prefix);
 		break;

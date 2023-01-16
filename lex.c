@@ -242,6 +242,7 @@ yylex()
 	}
 	Token tk = parse_next(yypos);
 	yypos += tk.len;
+	yylval = 0; /* FIXME */
 	return tk.type;
 }
 
