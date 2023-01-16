@@ -105,23 +105,23 @@ stateshifts(Parser *P, Grammar *G, int st)
 	for (int i = 0; i < I.n; i++) {
 		char *nextsym = item_nextsym(I.item[i]);
 		if (I.item[i].p->n > 0) {
-			printf("%d: [%d] of %lu: %s\n", st, i, I.n, 
-				item_str(I.item[i], G));
+			/*printf("%d: [%d] of %lu: %s\n", st, i, I.n, */
+				/*item_str(I.item[i], G));*/
 		} else {
-			printf("%d: [%d] of %lu: %s -> <e>\n", st, i, I.n,
-				I.item[i].sym);
+			/*printf("%d: [%d] of %lu: %s -> <e>\n", st, i, I.n,*/
+				/*I.item[i].sym);*/
 		}
 		/* set actions for given symbol only once */
 		if (map_get(action, nextsym) != NULL) {
 			continue;
 		}
 		if (strcmp(nextsym, SYMBOL_EPSILON) == 0) {
-			Action *act = reduceacc(P, I.item[i]);
 			Symbolset *fllw = grammar_follow(G, I.item[i].sym);
-			printf("follow: %s\naction: %s\n", prod_str(fllw, G),
-				action_str(act));
+			/*printf("follow: %s\naction: %s\n", prod_str(fllw, G),*/
+				/*action_str(act));*/
 			for (int j = 0; j < fllw->n; j++) {
-				/*map_set(action, fllw->sym[j], act);*/
+				Action *act = reduceacc(P, I.item[i]);
+				map_set(action, fllw->sym[j], act);
 			}
 			continue;
 		}
