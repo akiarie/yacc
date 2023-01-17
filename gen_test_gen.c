@@ -1,5 +1,14 @@
+#ifndef YY_TOKENS
+#define YY_TOKENS
+
+int
+yyparse();
+
 /* TOKEN DEFINITIONS */
 #define DIGIT 257
+
+#endif
+
 #include <ctype.h>
 
 int yylval;
@@ -59,14 +68,13 @@ yystack_push(YYStack *stack, int val)
 	stack->val[index] = val;
 }
 
-int
+void
 yystack_popn(YYStack *stack, int n)
 {
-	assert(0 < n && n < stack->len);
+	assert(n < stack->len);
 	for (int i = 0; i < n; i++) {
 		stack->len--;
 	}
-	return stack->val[stack->len]; /* i.e. the last item popped */
 }
 
 int
