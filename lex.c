@@ -252,7 +252,6 @@ yylex()
 		exit(EXIT_FAILURE);
 	}
 	Token tk = parse_next(yypos);
-	printf("{%s: \"%s\", %lu}\n", yytokstr(tk.type), tk.lexeme, tk.len);
 	yypos += tk.len;
 	yylval = 0; /* FIXME */
 	return tk.type;
