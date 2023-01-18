@@ -249,6 +249,9 @@ genaction(Action *act, struct lrprodset prods, char *prefix)
 	"%syystack_popn(values, %lu);\n", prefix, len);
 			strbuilder_printf(b, 
 	"%syystack_push(values, val);\n", prefix);
+		} else {
+			strbuilder_printf(b, 
+	"%syystack_push(values, 0);\n", prefix);
 		}
 		reduce = genreduce(prods, act->u.prod);
 		strbuilder_printf(b, 

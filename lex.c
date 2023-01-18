@@ -73,6 +73,17 @@ skipws(char *s)
 	return s;
 }
 
+static char *
+skipwscomments(char *s)
+{
+	s = skipws(s);
+	if (strncmp(s, "/*", 2) == 0) {
+		while (strncmp(s++, "*/", 2) != 0) {}
+		s++; /* ended with *s == '/' */
+	}
+	return isspace(*s) ? skipwscomments(s) : s;
+}
+
 static int
 toseq(char *s, char *seq)
 {
@@ -214,7 +225,7 @@ parse_next(char *pos)
 	token_lexer lexers[] = {
 		lex_punct, lex_keyword, lex_id, lex_num,
 	};
-	char *s = skipws(pos);
+	char *s = skipwscomments(pos);
 	if (*s == '\0') {
 		return tkEof;
 	}
@@ -241,6 +252,7 @@ yylex()
 		exit(EXIT_FAILURE);
 	}
 	Token tk = parse_next(yypos);
+	printf("{%s: \"%s\", %lu}\n", yytokstr(tk.type), tk.lexeme, tk.len);
 	yypos += tk.len;
 	yylval = 0; /* FIXME */
 	return tk.type;

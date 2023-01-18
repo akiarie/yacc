@@ -665,7 +665,7 @@ symbolset_firstafter(const Grammar *G, Symbolset *set, char *sym)
 	int k = 0;
 	while ((k = symbolset_getindex(set, sym)) >= 0) {
 		set = prod_subrange(set, k + 1, set->n);
-		symbolset_includerange(after, grammar_first(G, prod_head(set)));
+		symbolset_includerange(after, grammar_symbolsetfirst(G, set));
 	}
 	return after;
 }
@@ -708,6 +708,7 @@ symbolset_prodfollow(const Grammar *G, char *sym, Prod *p)
 	return set;
 }
 
+/* symbolset_computefollow: get symbols in symX productions that follow sym */
 static Symbolset *
 symbolset_computefollow(const Grammar *G, char *sym, char *symX,
 		struct circuitbreaker *tr)

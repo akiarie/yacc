@@ -62,8 +62,6 @@ main()
 "	}\n"
 "	return c;\n"
 "}\n");
-	gen(stdout, P);
-	/*
 	char *buf = NULL;
 	size_t buflen = 0;
 	FILE *stream = open_memstream(&buf, &buflen);
@@ -76,7 +74,6 @@ main()
 	}
 	free(expected);
 	free(buf);
-	*/
 	parser_destroy(P);
 	grammar_destroy(GG);
 	grammar_destroy(G);
