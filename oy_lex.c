@@ -6,7 +6,7 @@
 #include <ctype.h>
 
 #include "util.h"
-#include "yacc.h"
+#include "oy_test.tab.h"
 #include "lex.h"
 
 static char *tokstr[] = {

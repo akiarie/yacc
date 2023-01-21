@@ -1,4 +1,5 @@
 CC = cc -g
+YACC = yacc
 
 HEADERS = util.h table.h grammar.h parser.h gen.h
 OBJECTS = util.o table.o grammar.o parser.o gen.o
@@ -59,6 +60,24 @@ lex_test: lex_test.c lex.o
 	@printf '\CC\t$@\n'
 	@$(CC) -o $@ $^
 
+OLDYACCGEN = oy_test.tab.c oy_test.tab.h
+
+oy_test: $(OLDYACCGEN) $(HEADERS) $(OBJECTS) oy_lex.o
+	@printf '\CC\t$@\n'
+	@$(CC) -o $@ oy_test.tab.c $(OBJECTS) oy_lex.o
+
+oy_lex.o: oy_lex.c $(OLDYACCGEN)
+	@printf '\CC\t$@\n'
+	@$(CC) -c $^
+
+oy_lex.c: lex.c
+	@printf '\GEN\toy_lex.c\n'
+	@sed 's/yacc.h/oy_test.tab.h/g' $^ > $@
+
+$(OLDYACCGEN): oldyacc_test.y
+	@printf '\YACC\t$@\n'
+	@$(YACC) -d -b oy_test oldyacc_test.y
+
 check: grammar_test gen_test lex_test
 	@./run-tests.sh
 
@@ -67,6 +86,7 @@ clean-tests:
 
 clean: clean-tests
 	@rm -f $(OBJECTS) *.gch a.out yacc.o $(YACCGEN) yaccgen yacc
+	@rm -f $(OLDYACCGEN) oy_lex.*
 	@rm -rf *.dSYM
 
 .PHONY: clean clean-tests

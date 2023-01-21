@@ -44,6 +44,7 @@ main()
 		prod_inline("$$ = $2;", "(", "expr", ")"),
 		prod_inline("", "DIGIT")
 	));
+	printf("%s\n", grammar_str(G));
 	Grammar *GG = grammar_augment(G);
 	Parser P = parser_create(GG, 
 /* preamble */

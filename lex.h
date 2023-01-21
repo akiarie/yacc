@@ -4,15 +4,22 @@
 #define TK_EOF 0
 #define TK_ERROR -1
 
-int yylval;
-
 int
 yylex();
+
+void
+yyerror(char *);
 
 void
 yyscanstring(char *);
 
 char *
 yytokstr(int tk);
+
+char *
+yylexeme();
+
+char *
+yytext();
 
 #endif

@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SYMBOL_EPSILON "<e>"
-#define SYMBOL_EOF "$"
-#define SYMBOL_DOT "."
-#define SYMBOL_ARROW "->"
+#define SYMBOL_EPSILON	"<e>"
+#define SYMBOL_EOF	"$"
+#define SYMBOL_DOT	"."
+#define SYMBOL_ARROW	"->"
 
 typedef struct grammar Grammar;
 

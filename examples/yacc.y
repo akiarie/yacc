@@ -21,50 +21,50 @@
 %start spec
 %%
 
-spec  : defs MARK rules tail
-      ;
-tail  : MARK { /* in this action, set up the rest of the file */ }
-      | /* empty: the second MARK is optional */
-      ;
-defs  : /* empty */
-      | defs def
-      ;
-def   : START IDENTIFIER
-      | UNION { /* copy union definition to output */ }
-      | LCURL { /* copy C code to output file */ } RCURL
-      | rword tag nlist
-      ;
-rword : TOKEN
-      | LEFT
-      | RIGHT
-      | NONASSOC
-      | TYPE
-      ;
-tag   : /* empty: union tag optional */
-      | '<' IDENTIFIER '>'
-      ;
-nlist : nmno
-      | nlist nmno
-      ;
-nmno  : IDENTIFIER         /* note: literal invalid with % type */
-      | IDENTIFIER NUMBER  /* note: invalid with % type */
-      ;
+spec	: defs MARK rules tail
+	;
+tail	: MARK { /* in this action, set up the rest of the file */ }
+     	| /* empty: the second MARK is optional */
+	;
+defs	: /* empty */
+	| defs def
+	;
+def	: START IDENTIFIER
+	| UNION { /* copy union definition to output */ }
+	| LCURL { /* copy C code to output file */ } RCURL
+	| rword tag nlist
+	;
+rword	: TOKEN
+	| LEFT
+      	| RIGHT
+      	| NONASSOC
+      	| TYPE
+      	;
+tag	: /* empty: union tag optional */
+	| '<' IDENTIFIER '>'
+      	;
+nlist	: nmno
+      	| nlist nmno
+      	;
+nmno	: IDENTIFIER         /* note: literal invalid with % type */
+	| IDENTIFIER NUMBER  /* note: invalid with % type */
+	;
 
 /* rules section */
-rules : C_IDENTIFIER rbody prec
-      | rules rule
-      ;
-rule  : C_IDENTIFIER rbody prec
-      | '|' rbody prec
-      ;
-rbody : /* empty */
-      | rbody IDENTIFIER
-      | rbody act
-      ;
-act   : '{' { /* copy action, translate $$, and so on */ } '}'
-      ;
-prec  : /* empty */
-      | PREC IDENTIFIER
-      | PREC IDENTIFIER act
-      | prec ';'
-      ;
+rules	: C_IDENTIFIER rbody prec
+	| rules rule
+      	;
+rule	: C_IDENTIFIER rbody prec
+	| '|' rbody prec
+      	;
+rbody	: /* empty */
+	| rbody IDENTIFIER
+      	| rbody act
+      	;
+act	: '{' { /* copy action, translate $$, and so on */ } '}'
+	;
+prec	: /* empty */
+	| PREC IDENTIFIER
+      	| PREC IDENTIFIER act
+      	| prec ';'
+      	;
