@@ -27,7 +27,7 @@ static void
 startprod();
 
 static void
-prodappend();
+prodaddsym();
 
 static void
 finish();
@@ -91,7 +91,7 @@ rule	: C_IDENTIFIER { startnt(); } prod
 prod	: { startprod(); } rbody prec { ntaddprod(); }
      	;
 rbody	: /* empty */
-	| rbody IDENTIFIER { prodappend(); }
+	| rbody IDENTIFIER { prodaddsym(); }
       	| rbody act
       	;
 act	: '{' { /* copy action, translate $$, and so on */ } '}'
@@ -112,10 +112,35 @@ startprod()
 	p = prod_create("");
 }
 
-static void
-prodappend()
+static char *
+getliteral(char *s)
 {
-	prod_append(p, yylexeme());
+	struct strbuilder *b = strbuilder_create();
+	switch (*++s) {
+	case '\\': /* escape */
+		strbuilder_printf(b, "\\%c", s[1]);
+		break;
+	default:
+		strbuilder_putc(b, s[0]);
+		break;
+	}
+	return strbuilder_build(b);
+}
+
+static void
+prodaddsym()
+{
+	char *raw = yylexeme();
+	char *sym;
+	switch (raw[0]) {
+	case '\'':
+		sym = getliteral(raw);
+		break;
+	default:
+		sym = raw;
+		break;
+	}
+	prod_append(p, sym);
 }
 
 static char *symX = NULL;
