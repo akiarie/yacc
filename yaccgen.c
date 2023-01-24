@@ -10,7 +10,7 @@ genfiles(FILE *codefile, FILE *headerfile)
 {
 	Grammar *G = grammar_create("spec");
 	map_set(G->map, "spec", nonterminal_inline(
-		prod_inline("", "defs", "MARK", "rules", "tail")
+		prod_inline("", "defs", "MARK", "rules", "tail", "finish_")
 	));
 	map_set(G->map, "tail", nonterminal_inline(
 		prod_inline("", "MARK"),
@@ -21,9 +21,9 @@ genfiles(FILE *codefile, FILE *headerfile)
 		prod_inline("", "defs", "def")
 	));
 	map_set(G->map, "def", nonterminal_inline(
-		prod_inline("", "START", "IDENTIFIER"),
+		prod_inline("", "START", "IDENTIFIER", "start_"),
 		prod_inline("", "UNION"),
-		prod_inline("", "LCURL", "RCURL"),
+		prod_inline("", "LCURL", "paddto_", "RCURL"),
 		prod_inline("", "rword", "tag", "nlist")
 	));
 	map_set(G->map, "rword", nonterminal_inline(
@@ -47,16 +47,19 @@ genfiles(FILE *codefile, FILE *headerfile)
 	));
 	/* rules section */
 	map_set(G->map, "rules", nonterminal_inline(
-		prod_inline("", "C_IDENTIFIER", "rbody", "prec"),
-		prod_inline("", "rules", "rule")
+		prod_inline("", "rules", "rule", "addnt_"),
+		prod_inline("", "rule", "addnt_")
 	));
 	map_set(G->map, "rule", nonterminal_inline(
-		prod_inline("", "C_IDENTIFIER", "rbody", "prec"),
-		prod_inline("", "|", "rbody", "prec")
+		prod_inline("", "C_IDENTIFIER", "stnt_", "prod"),
+		prod_inline("", "rule", "|", "prod")
+	));
+	map_set(G->map, "prod", nonterminal_inline(
+		prod_inline("", "stprod_", "rbody", "prec", "ntadd_")
 	));
 	map_set(G->map, "rbody", nonterminal_inline(
 		prod_epsilon(), /* ε */
-		prod_inline("", "rbody", "IDENTIFIER"),
+		prod_inline("", "rbody", "IDENTIFIER", "pradd_"),
 		prod_inline("", "rbody", "act")
 	));
 	map_set(G->map, "act", nonterminal_inline(
@@ -68,11 +71,36 @@ genfiles(FILE *codefile, FILE *headerfile)
 		prod_inline("", "PREC", "IDENTIFIER", "act"),
 		prod_inline("", "prec", ";")
 	));
+	map_set(G->map, "finish_", nonterminal_inline(
+		prod_bareact("finish();")
+	));
+	map_set(G->map, "start_", nonterminal_inline(
+		prod_bareact("start();")
+	));
+	map_set(G->map, "paddto_", nonterminal_inline(
+		prod_bareact("addtopreamble();")
+	));
+	map_set(G->map, "addnt_", nonterminal_inline(
+		prod_bareact("addnt();")
+	));
+	map_set(G->map, "stnt_", nonterminal_inline(
+		prod_bareact("startnt();")
+	));
+	map_set(G->map, "stprod_", nonterminal_inline(
+		prod_bareact("startprod;")
+	));
+	map_set(G->map, "ntadd_", nonterminal_inline(
+		prod_bareact("ntaddprod();")
+	));
+	map_set(G->map, "pradd_", nonterminal_inline(
+		prod_bareact("prodaddsym();")
+	));
 	Grammar *GG = grammar_augment(G);
 	Parser P = parser_create(GG,
-"#include \"lex.h\"\n"
+"#include \"pre.h\"\n"
 "\n",
-"");
+"#include \"post.c\"\n"
+"\n");
 	gen(codefile, P);
 	gen_headers(headerfile, P);
 	parser_destroy(P);

@@ -1,36 +1,5 @@
 %{
-#include <stdio.h>
-#include <assert.h>
-#include <ctype.h>
-#include <string.h>
-
-#include "util.h"
-#include "grammar.h"
-#include "lex.h"
-
-static void
-addtopreamble();
-
-static void
-setstart(char *sym);
-
-static void
-addnt();
-
-static void
-startnt();
-
-static void
-ntaddprod();
-
-static void
-startprod();
-
-static void
-prodaddsym();
-
-static void
-finish();
+#include "pre.h"
 %}
 /* grammar for the input to yacc
  * https://www.unix.com/man-page/POSIX/1posix/yacc */
@@ -52,17 +21,16 @@ finish();
 %start spec
 %%
 
-spec	: defs MARK rules tail { finish(); }
-	;
+spec	: defs MARK rules tail finish_
 tail	: MARK { /* in this action, set up the rest of the file */ }
      	| /* empty: the second MARK is optional */
 	;
 defs	: /* empty */
 	| defs def
 	;
-def	: START IDENTIFIER { assert(false); /* setstart($2); */ }
-	| UNION { /* copy union definition to output */ assert(false); }
-	| LCURL { addtopreamble(); } RCURL
+def	: START IDENTIFIER start_
+	| UNION /* { copy union definition to output  } */
+	| LCURL paddto_ RCURL
 	| rword tag nlist
 	;
 rword	: TOKEN
@@ -82,16 +50,16 @@ nmno	: IDENTIFIER         /* note: literal invalid with % type */
 	;
 
 /* rules section */
-rules	: rules rule { addnt(); }
-	| rule { addnt(); }
+rules	: rules rule addnt_
+	| rule addnt_
       	;
-rule	: C_IDENTIFIER { startnt(); } prod
+rule	: C_IDENTIFIER stnt_ prod
 	| rule '|' prod
       	;
-prod	: { startprod(); } rbody prec { ntaddprod(); }
+prod	: stprod_ rbody prec ntadd_
      	;
 rbody	: /* empty */
-	| rbody IDENTIFIER { prodaddsym(); }
+	| rbody IDENTIFIER pradd_
       	| rbody act
       	;
 act	: '{' { /* copy action, translate $$, and so on */ } '}'
@@ -101,137 +69,24 @@ prec	: /* empty */
       	| PREC IDENTIFIER act
       	| prec ';'
       	;
+
+/* interior actions */
+finish_	: { finish(); }
+	;
+start_	: { start(); }
+	;
+paddto_	: { addtopreamble(); }
+	;
+addnt_	: { addnt(); }
+	;
+stnt_	: { startnt(); }
+	;
+stprod_	: { startprod(); }
+	;
+ntadd_	: { ntaddprod(); }
+	;
+pradd_	: { prodaddsym(); }
+       	;
 %%
 
-static Prod *p = NULL;
-
-static void
-startprod()
-{
-	assert(!p);
-	p = prod_create("");
-}
-
-static char *
-getliteral(char *s)
-{
-	struct strbuilder *b = strbuilder_create();
-	switch (*++s) {
-	case '\\': /* escape */
-		strbuilder_printf(b, "\\%c", s[1]);
-		break;
-	default:
-		strbuilder_putc(b, s[0]);
-		break;
-	}
-	return strbuilder_build(b);
-}
-
-static void
-prodaddsym()
-{
-	char *raw = yylexeme();
-	char *sym;
-	switch (raw[0]) {
-	case '\'':
-		sym = getliteral(raw);
-		break;
-	default:
-		sym = raw;
-		break;
-	}
-	prod_append(p, sym);
-}
-
-static char *symX = NULL;
-static Nonterminal *X = NULL;
-
-static void
-ntaddprod()
-{
-	assert(X && p);
-	nonterminal_addprod(X, p);
-	p = NULL;
-}
-
-static void
-startnt()
-{
-	assert(!symX && !X);
-	symX = yylexeme();
-	X = nonterminal_create();
-}
-
-static Grammar *G = NULL;
-
-static void
-setstart(char *sym)
-{
-	assert(!G);
-	G = grammar_create(sym);
-}
-
-static void
-addnt()
-{
-	assert(symX && X);
-	if (!G) {
-		setstart(symX);
-	}
-	map_set(G->map, symX, X);
-	X = NULL;
-	symX = NULL;
-}
-
-struct strbuilder *bpre = NULL;
-
-static void
-addtopreamble()
-{
-	if (!bpre) {
-		bpre = strbuilder_create();
-	}
-	char *s = yytext();
-	assert(strlen(s) > 2);
-	strbuilder_printf(bpre, "%s\n", s+2); /* skip %{ */
-	free(s);
-}
-
-static void
-finish()
-{
-	printf("%s\n", grammar_str(G));
-}
-
-/* read_file: reads contents of file and returns them
- * caller must free returned string 
- * see https://stackoverflow.com/a/14002993 */
-char *
-read_file(char *path)
-{
-	FILE *f = fopen(path, "rb");
-	fseek(f, 0, SEEK_END);
-	long fsize = ftell(f);
-	fseek(f, 0, SEEK_SET);  /* same as rewind(f); */
-	char *str = malloc(fsize + 1);
-	fread(str, fsize, 1, f);
-	fclose(f);
-	str[fsize] = '\0';
-	return str;
-}
-
-#define DEFAULT_FILE "y.tab.c"
-
-int
-main(int argc, char *argv[])
-{
-	if (argc != 2) {
-		fprintf(stderr, "must include grammar\n");
-		exit(EXIT_FAILURE);
-	}
-	char *file = read_file(argv[1]);
-	yyscanstring(file);
-	yyparse();
-	/* TODO: print G */
-	free(file);
-}
+#include "post.c"

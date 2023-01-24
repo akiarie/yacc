@@ -16,6 +16,8 @@ yyscanstring(char *);
 char *
 yytokstr(int tk);
 
+int yylval;
+
 char *
 yylexeme();
 

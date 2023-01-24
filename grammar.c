@@ -46,6 +46,12 @@ prod_inline_act(char *action, ...)
 	return p;
 }
 
+Prod *
+prod_bareact(char *action)
+{
+	return prod_inline_act(action, NULL);
+}
+
 void
 prod_destroy(Prod *p)
 {
@@ -535,16 +541,16 @@ grammar_leftfactor(const Grammar *G)
 
 static void
 symbolset_addfirst(const Grammar *G, Symbolset *set, Prod *p,
-		struct circuitbreaker *tr)
+		struct map *cm)
 {
-	if (p->n == 0 || !circuitbreaker_append(tr, p->sym[0])) {
+	if (p->n == 0 || map_get(cm, p->sym[0])) {
 		return;
 	}
 	Prod *pfirst = grammar_first(G, p->sym[0]);
 	prod_appendrange(set, pfirst);
 	for (int i = 0; i < pfirst->n; i++) {
 		if (strcmp(pfirst->sym[i], SYMBOL_EPSILON) == 0){
-			symbolset_addfirst(G, set, prod_subrange(p, 1, p->n), tr);
+			symbolset_addfirst(G, set, prod_subrange(p, 1, p->n), cm);
 			return;
 		}
 	}
@@ -616,9 +622,10 @@ grammar_first(const Grammar *G, char *sym)
 			symbolset_include(set, SYMBOL_EPSILON);
 			continue;
 		}
-		struct circuitbreaker *tr = circuitbreaker_create(sym);
-		symbolset_addfirst(G, set, p, tr);
-		circuitbreaker_destroy(tr);
+		struct map *cm = map_create();
+		map_set(cm, sym, sym);
+		symbolset_addfirst(G, set, p, cm);
+		map_destroy(cm);
 	}
 	return set;
 }
@@ -743,6 +750,7 @@ grammar_follow_act(const Grammar *G, char *sym, struct circuitbreaker *tr)
 		Symbolset *fllws = symbolset_computefollow(G, sym, e.key, tr);
 		symbolset_includerange(set, fllws);
 	}
+	/* 2. and 3. */
 	return set;
 }
 

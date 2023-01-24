@@ -254,6 +254,7 @@ yylex()
 	Token tk = parse_next(yypos);
 	yylast = tk;
 	yypos += tk.len;
+	yylval = tk.type;
 	return tk.type;
 }
 

@@ -8,9 +8,9 @@ GRAMMAR_INC = grammar_parse.c grammar_util.c grammar_lr.c
 
 YACCGEN = yacc.c yacc.h
 
-yacc: yacc.o lex.o
+yacc: yacc.o lex.o $(OBJECTS)
 	@printf '\CC\t$@\n'
-	@$(CC) -o $@ main.c yacc.o lex.o
+	@$(CC) -o $@ main.c yacc.o lex.o $(OBJECTS)
 
 yacc.o: $(YACCGEN)
 	@printf '\CC\t$@\n'

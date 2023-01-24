@@ -33,6 +33,9 @@ prod_inline_act(char *action, ...);
 
 #define prod_inline(action, ...) prod_inline_act(action, __VA_ARGS__, NULL)
 
+Prod *
+prod_bareact(char *action);
+
 char *
 prod_bare_str(const Prod *);
 
