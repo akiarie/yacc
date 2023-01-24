@@ -76,7 +76,7 @@ oy_lex.c: lex.c
 
 $(OLDYACCGEN): oldyacc_test.y
 	@printf '\YACC\t$@\n'
-	@$(YACC) -d -b oy_test oldyacc_test.y
+	@$(YACC) -v -d -b oy_test oldyacc_test.y
 
 check: grammar_test gen_test lex_test
 	@./run-tests.sh

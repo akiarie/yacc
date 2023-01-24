@@ -255,6 +255,7 @@ yylex()
 	yylast = tk;
 	yypos += tk.len;
 	yylval = tk.type;
+	printf("{%s: \"%s\", %lu}\n", yytokstr(tk.type), tk.lexeme, tk.len);
 	return tk.type;
 }
 

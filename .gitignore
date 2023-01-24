@@ -14,4 +14,5 @@ yaccgen
 yacc.c
 yacc.h
 yacc
+oy_lex*
 *.output
