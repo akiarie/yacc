@@ -539,18 +539,32 @@ grammar_leftfactor(const Grammar *G)
 	return H;
 }
 
+static Symbolset *
+symbolset_firstwmap(const Grammar *G, Prod *p, struct map *map)
+{
+	assert(p->n > 0);
+	Prod *first = map_get(map, p->sym[0]);
+	if (!first) {
+		first = grammar_first(G, p->sym[0]);
+	}
+	return first;
+}
+
+static void
+symbolset_includerange(Symbolset *p, Symbolset *q);
+
 static void
 symbolset_addfirst(const Grammar *G, Symbolset *set, Prod *p,
-		struct map *cm)
+		struct map *map)
 {
-	if (p->n == 0 || map_get(cm, p->sym[0])) {
+	if (prod_isepsilon(p)) {
 		return;
 	}
-	Prod *pfirst = grammar_first(G, p->sym[0]);
-	prod_appendrange(set, pfirst);
+	Prod *pfirst = symbolset_firstwmap(G, p, map);
+	symbolset_includerange(set, pfirst);
 	for (int i = 0; i < pfirst->n; i++) {
-		if (strcmp(pfirst->sym[i], SYMBOL_EPSILON) == 0){
-			symbolset_addfirst(G, set, prod_subrange(p, 1, p->n), cm);
+		if (strcmp(pfirst->sym[i], SYMBOL_EPSILON) == 0) {
+			symbolset_addfirst(G, set, prod_subrange(p, 1, p->n), map);
 			return;
 		}
 	}
@@ -611,21 +625,23 @@ grammar_first(const Grammar *G, char *sym)
 {
 	Symbolset *set = prod_epsilon();
 	Nonterminal *X = map_get(G->map, sym);
-	if (X == NULL) { /* X terminal */
+	if (X == NULL) { /* 1. */
 		symbolset_include(set, sym);
 		return set;
 	}
-	/* X nonterminal */
-	for (int i = 0; i < X->n; i++) {
+	for (int i = 0; i < X->n; i++) { /* 3. */
 		Prod *p = X->prod[i];
 		if (prod_isepsilon(p)) {
 			symbolset_include(set, SYMBOL_EPSILON);
-			continue;
+			break;
 		}
-		struct map *cm = map_create();
-		map_set(cm, sym, sym);
-		symbolset_addfirst(G, set, p, cm);
-		map_destroy(cm);
+	}
+	for (int i = 0; i < X->n; i++) { /* 2. */
+		Prod *p = X->prod[i];
+		struct map *map = map_create();
+		map_set(map, sym, set);
+		symbolset_addfirst(G, set, p, map);
+		map_destroy(map);
 	}
 	return set;
 }
@@ -750,7 +766,6 @@ grammar_follow_act(const Grammar *G, char *sym, struct circuitbreaker *tr)
 		Symbolset *fllws = symbolset_computefollow(G, sym, e.key, tr);
 		symbolset_includerange(set, fllws);
 	}
-	/* 2. and 3. */
 	return set;
 }
 

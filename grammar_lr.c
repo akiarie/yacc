@@ -42,7 +42,7 @@ grammar_augment(const Grammar *G)
 Itemset
 itemset_create()
 {
-	return (Itemset) {NULL, 0};
+	return (Itemset) {.item = NULL, .n = 0};
 }
 
 static Itemset
@@ -57,6 +57,17 @@ itemset_copy(Itemset I)
 
 static bool
 item_empty(Item);
+
+static bool
+hasepsilon(Nonterminal *X)
+{
+	for (int i = 0; i < X->n; i++) {
+		if (prod_isepsilon(X->prod[i])) {
+			return true;
+		}
+	}
+	return false;
+}
 
 void
 itemset_add(Itemset *I, Item item)
