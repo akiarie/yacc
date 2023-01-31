@@ -242,7 +242,8 @@ parse_next(char *pos)
 
 static char *yyinputstring = NULL,
 	    *yypos = NULL;
-static Token yylast = {TK_ERROR, ""};
+static Token yylast = {TK_ERROR, ""},
+	     yy2last = {TK_ERROR, ""};
 
 int
 yylex()
@@ -252,10 +253,10 @@ yylex()
 		exit(EXIT_FAILURE);
 	}
 	Token tk = parse_next(yypos);
+	yy2last = yylast;
 	yylast = tk;
 	yypos += tk.len;
 	yylval = tk.type;
-	printf("{%s: \"%s\", %lu}\n", yytokstr(tk.type), tk.lexeme, tk.len);
 	return tk.type;
 }
 
@@ -264,14 +265,14 @@ yytext()
 {
 	assert(yylast.type != TK_ERROR);
 	struct strbuilder *b = strbuilder_create();
-	strbuilder_printf(b, "%.*s", yylast.len, yypos - yylast.len);
+	strbuilder_printf(b, "%.*s", yy2last.len, yypos - yy2last.len);
 	return strbuilder_build(b);
 }
 
 char *
 yylexeme()
 {
-	return yylast.lexeme;
+	return yy2last.lexeme;
 }
 
 void

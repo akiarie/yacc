@@ -87,7 +87,7 @@ genfiles(FILE *codefile, FILE *headerfile)
 		prod_bareact("startnt();")
 	));
 	map_set(G->map, "stprod_", nonterminal_inline(
-		prod_bareact("startprod;")
+		prod_bareact("startprod();")
 	));
 	map_set(G->map, "ntadd_", nonterminal_inline(
 		prod_bareact("ntaddprod();")

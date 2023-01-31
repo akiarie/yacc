@@ -250,6 +250,10 @@ genaction(Action *act, struct lrprodset prods, char *prefix)
 			strbuilder_printf(b, 
 	"%syystack_push(values, val);\n", prefix);
 		} else {
+			if (prods.prod[act->u.prod]->action) {
+			strbuilder_printf(b, 
+	"%s%s\n", prefix, prods.prod[act->u.prod]->action);
+			}
 			strbuilder_printf(b, 
 	"%syystack_push(values, 0);\n", prefix);
 		}
