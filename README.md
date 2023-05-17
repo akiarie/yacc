@@ -1,4 +1,4 @@
-# A Self-hosting Implementation of Yacc
+# A Self-hosting Compiler-Compiler
 
 _This repo contains an implementation of Yacc that generates its own parser, but
 is extremely limited in its feature set. I was so excited when it worked, that I
