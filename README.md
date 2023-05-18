@@ -3,7 +3,7 @@
 _This repo contains an implementation of Yacc that generates its own parser, but
 is extremely limited in its feature set. I was so excited when it worked, that I
 moved on to the next thing without properly documenting it. I hope to document
-it fully at some point in the next few weeks._
+it fully at some point in the future._
 
 By _self-hosting_ I mean that the parser for the [Yacc input
 langauge](https://www.cs.utexas.edu/users/novak/yaccpaper.htm) is hardcoded
