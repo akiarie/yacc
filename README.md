@@ -1,9 +1,10 @@
 # A Self-hosting Compiler-Compiler
 
-_This repo contains an implementation of Yacc that generates its own parser, but
-is extremely limited in its feature set. I was so excited when it worked, that I
-moved on to the next thing without properly documenting it. I hope to document
-it fully at some point in the future._
+_This repo contains a (partially-complete) implementation of Yacc that generates
+its own parser, but is extremely limited in its feature set. Actually, all it
+currently does is generate a parser-parser. I was so excited when the
+self-hosting worked, that I moved on to the next thing without properly
+documenting it. I hope to document it fully at some point in the future._
 
 By _self-hosting_ I mean that the parser for the [Yacc input
 langauge](https://www.cs.utexas.edu/users/novak/yaccpaper.htm) is hardcoded
